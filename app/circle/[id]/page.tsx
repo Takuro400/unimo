@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -24,29 +25,28 @@ export default function CircleDetailPage() {
 
   const [circle, setCircle] = useState<Circle | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      // Fetch circle
       if (supabase) {
-        const { data: circleData } = await supabase
-          .from("circles")
-          .select("*")
-          .eq("id", id)
-          .single();
-        const { data: postsData } = await supabase
-          .from("posts")
-          .select("*")
-          .eq("circle_id", id)
-          .order("created_at", { ascending: false });
+        const [{ data: circleData }, { data: postsData }, { data: memberData }] = await Promise.all([
+          supabase.from("circles").select("*").eq("id", id).single(),
+          supabase.from("posts").select("*").eq("circle_id", id).order("created_at", { ascending: false }),
+          user.id !== "dev-user"
+            ? supabase.from("circle_members").select("id").eq("circle_id", id).eq("user_id", user.id).single()
+            : Promise.resolve({ data: null }),
+        ]);
         setCircle(circleData ?? MOCK_CIRCLES.find((c) => c.id === id) ?? null);
         setPosts(postsData ?? MOCK_POSTS[id] ?? []);
+        setIsMember(!!memberData);
       } else {
         setCircle(MOCK_CIRCLES.find((c) => c.id === id) ?? null);
         setPosts(MOCK_POSTS[id] ?? []);
+        setIsMember(true); // dev mode: always show post button
       }
       setLoading(false);
     })();
@@ -94,7 +94,7 @@ export default function CircleDetailPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-10">
+      <div className="flex-1 overflow-y-auto pb-28">
         {/* Circle info */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -129,13 +129,10 @@ export default function CircleDetailPage() {
         </motion.div>
 
         {/* Divider */}
-        <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "0 16px 0" }} />
+        <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "0 16px" }} />
 
         {/* Month tabs */}
-        <div
-          className="flex gap-1.5 px-3 py-3 overflow-x-auto"
-          style={{ scrollbarWidth: "none" }}
-        >
+        <div className="flex gap-1.5 px-3 py-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {MONTHS.map((m, i) => {
             const monthNum = i + 1;
             const active = selectedMonth === monthNum;
@@ -150,25 +147,12 @@ export default function CircleDetailPage() {
                   background: active ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
                   border: active ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
                   color: active ? "#A78BFA" : "rgba(255,255,255,0.35)",
-                  fontSize: 12,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  minWidth: 40,
+                  fontSize: 12, cursor: "pointer", transition: "all 0.2s ease", minWidth: 40,
                 }}
               >
                 {m}
                 {hasContent && !active && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 3,
-                      right: 3,
-                      width: 4,
-                      height: 4,
-                      borderRadius: "50%",
-                      background: "rgba(167,139,250,0.5)",
-                    }}
-                  />
+                  <span style={{ position: "absolute", top: 3, right: 3, width: 4, height: 4, borderRadius: "50%", background: "rgba(167,139,250,0.5)" }} />
                 )}
               </motion.button>
             );
@@ -181,28 +165,19 @@ export default function CircleDetailPage() {
             {monthPosts.length === 0 ? (
               <motion.div
                 key={`empty-${selectedMonth}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
                 className="flex flex-col items-center py-12"
               >
-                <div
-                  className="glass rounded-2xl px-8 py-6 flex flex-col items-center"
-                  style={{ border: "1px solid rgba(255,255,255,0.06)" }}
-                >
+                <div className="glass rounded-2xl px-8 py-6 flex flex-col items-center" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
                   <span style={{ fontSize: 28, opacity: 0.2 }}>○</span>
-                  <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.2)" }}>
-                    この月の投稿はありません
-                  </p>
+                  <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.2)" }}>この月の投稿はありません</p>
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key={`posts-${selectedMonth}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="grid grid-cols-2 gap-2"
               >
@@ -214,6 +189,26 @@ export default function CircleDetailPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Post button — members only */}
+      {isMember && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, padding: "16px 20px 32px", background: "linear-gradient(to top, #0D0D0F 60%, transparent)" }}>
+          <Link href={`/circle/${id}/post`} style={{ textDecoration: "none", display: "block" }}>
+            <motion.div
+              whileTap={{ scale: 0.97 }}
+              className="w-full rounded-2xl py-4 flex items-center justify-center gap-2"
+              style={{
+                background: "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.10))",
+                border: "1px solid rgba(167,139,250,0.35)",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📷</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#C4B5FD", letterSpacing: "0.04em" }}>投稿する</span>
+            </motion.div>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
@@ -229,16 +224,9 @@ function PostCard({ post, index }: { post: Post; index: number }) {
     >
       {post.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.media_url}
-          alt={post.caption ?? ""}
-          style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }}
-        />
+        <img src={post.media_url} alt={post.caption ?? ""} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
       ) : (
-        <div
-          className={`bg-gradient-to-br ${gradient} flex items-center justify-center`}
-          style={{ height: 140 }}
-        >
+        <div className={`bg-gradient-to-br ${gradient} flex items-center justify-center`} style={{ height: 140 }}>
           <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>
         </div>
       )}

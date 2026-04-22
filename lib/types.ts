@@ -28,6 +28,13 @@ export interface Post {
   created_at: string;
 }
 
+export interface InviteCode {
+  id: string;
+  circle_id: string;
+  code: string;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;
