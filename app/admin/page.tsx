@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import type { Circle } from "@/lib/types";
+import type { User } from "@supabase/supabase-js";
 
 const EMOJIS = ["🎯","📷","🎭","🎵","🎾","🏀","🤖","🍳","🎬","⚽","🏊","🎸","🎨","📚","🏃","🎤"];
 const CATEGORIES = ["文化系","体育系","技術系","その他"];
@@ -17,10 +17,24 @@ function generateCode(): string {
 type CircleWithCode = Circle & { invite_code?: string };
 
 export default function AdminPage() {
-  const user = useAuth();
+  const [user, setUser] = useState<User | null | undefined>(undefined);
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState("");
   const [pwError, setPwError] = useState("");
+
+  useEffect(() => {
+    if (!supabase) {
+      setUser(null);
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const [circles, setCircles] = useState<CircleWithCode[]>([]);
   const [generatedCode, setGeneratedCode] = useState<{ code: string; circleName: string } | null>(null);
@@ -71,6 +85,12 @@ export default function AdminPage() {
 
     try {
       const code = generateCode();
+
+      if (supabase && !user) {
+        setError("サークル作成にはまずメインアプリ（/login）でログインが必要です");
+        setLoading(false);
+        return;
+      }
 
       if (supabase && user && user.id !== "dev-user") {
         const { data: circleData, error: circleErr } = await supabase
