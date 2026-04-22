@@ -41,8 +41,9 @@ export default function NewCirclePage() {
         // Dev mode: just go home
         router.push("/");
       }
-    } catch {
-      setError("登録に失敗しました。もう一度お試しください。");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "登録に失敗しました。もう一度お試しください。");
       setLoading(false);
     }
   }
