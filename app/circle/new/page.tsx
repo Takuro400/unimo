@@ -42,7 +42,8 @@ export default function NewCirclePage() {
         router.push("/");
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const e = err as { message?: string; code?: string; details?: string; hint?: string };
+      const msg = [e?.message, e?.details, e?.hint, e?.code].filter(Boolean).join(" | ");
       setError(msg || "登録に失敗しました。もう一度お試しください。");
       setLoading(false);
     }
