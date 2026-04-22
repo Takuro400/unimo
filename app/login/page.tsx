@@ -12,14 +12,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const isKyutechEmail = (e: string) => e.endsWith("@mail.kyutech.ac.jp");
+  const isKyutechEmail = (e: string) => e.endsWith("@mail.kyutech.jp");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
     if (!isKyutechEmail(email)) {
-      setError("@mail.kyutech.ac.jp のメールアドレスのみ登録できます");
+      setError("@mail.kyutech.jp のメールアドレスのみ登録できます");
       return;
     }
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 九工大メールでログイン
               </p>
               <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
-                @mail.kyutech.ac.jp のアドレスが必要です
+                @mail.kyutech.jp のアドレスが必要です
               </p>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -87,7 +87,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="s000000x@mail.kyutech.ac.jp"
+                  placeholder="s000000x@mail.kyutech.jp"
                   required
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none"
                   style={{
