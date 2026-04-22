@@ -33,8 +33,9 @@ export default function LoginPage() {
         if (sbError) throw sbError;
       }
       setStep("sent");
-    } catch {
-      setError("送信に失敗しました。もう一度お試しください。");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || "送信に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);
     }
