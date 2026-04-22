@@ -1,14 +1,14 @@
 import type { Circle, Post } from "./types";
 
 export const MOCK_CIRCLES: Circle[] = [
-  { id: "1", name: "写真部", description: "日常の美しさをレンズに収める。四季折々の九工大キャンパスを撮影。", emoji: "📷", category: "文化系", created_by: null, created_at: "2024-01-01" },
-  { id: "2", name: "ダンスサークル NEXUS", description: "ストリートダンスからK-POPまで。毎週練習＆学祭で本番。", emoji: "🎭", category: "文化系", created_by: null, created_at: "2024-01-01" },
-  { id: "3", name: "音楽サークル Acoustic", description: "アコースティックギター・ピアノ・歌。弾き語りライブを定期開催。", emoji: "🎵", category: "文化系", created_by: null, created_at: "2024-01-01" },
-  { id: "4", name: "テニス部", description: "硬式テニス。九州学生リーグにも参戦する本格派。", emoji: "🎾", category: "体育系", created_by: null, created_at: "2024-01-01" },
-  { id: "5", name: "映画研究会", description: "自主映画の制作・上映。脚本から撮影・編集まで全部自分たちで。", emoji: "🎬", category: "文化系", created_by: null, created_at: "2024-01-01" },
-  { id: "6", name: "バスケットボール部", description: "男女混合で活動中。インカレも目指す！", emoji: "🏀", category: "体育系", created_by: null, created_at: "2024-01-01" },
-  { id: "7", name: "ロボット研究会", description: "NHK学生ロボコン出場を目指し毎日設計・製作。", emoji: "🤖", category: "技術系", created_by: null, created_at: "2024-01-01" },
-  { id: "8", name: "料理サークル Spice", description: "週1の料理会と学祭の模擬店が活動の柱。", emoji: "🍳", category: "文化系", created_by: null, created_at: "2024-01-01" },
+  { id: "1", name: "写真部", description: "日常の美しさをレンズに収める。四季折々の九工大キャンパスを撮影。", emoji: "📷", category: "文化系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "2", name: "ダンスサークル NEXUS", description: "ストリートダンスからK-POPまで。毎週練習＆学祭で本番。", emoji: "🎭", category: "文化系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "3", name: "音楽サークル Acoustic", description: "アコースティックギター・ピアノ・歌。弾き語りライブを定期開催。", emoji: "🎵", category: "文化系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "4", name: "テニス部", description: "硬式テニス。九州学生リーグにも参戦する本格派。", emoji: "🎾", category: "体育系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "5", name: "映画研究会", description: "自主映画の制作・上映。脚本から撮影・編集まで全部自分たちで。", emoji: "🎬", category: "文化系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "6", name: "バスケットボール部", description: "男女混合で活動中。インカレも目指す！", emoji: "🏀", category: "体育系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "7", name: "ロボット研究会", description: "NHK学生ロボコン出場を目指し毎日設計・製作。", emoji: "🤖", category: "技術系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
+  { id: "8", name: "料理サークル Spice", description: "週1の料理会と学祭の模擬店が活動の柱。", emoji: "🍳", category: "文化系", icon_url: null, background_url: null, created_by: null, created_at: "2024-01-01" },
 ];
 
 export const MOCK_POSTS: Record<string, Post[]> = {

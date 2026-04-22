@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -118,9 +117,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* FABs */}
-      {/* 参加する — bottom left */}
-      <div style={{ position: "fixed", bottom: 32, left: 20, zIndex: 50 }}>
+      {/* 参加する FAB */}
+      <div style={{ position: "fixed", bottom: 32, right: 20, zIndex: 50 }}>
         <motion.div
           whileTap={{ scale: 0.94 }}
           onClick={() => setShowJoinModal(true)}
@@ -132,26 +130,8 @@ export default function Home() {
           }}
         >
           <span style={{ fontSize: 14, color: "#A78BFA" }}>🎫</span>
-          <span style={{ fontSize: 13, color: "#C4B5FD", letterSpacing: "0.03em" }}>参加する</span>
+          <span style={{ fontSize: 13, color: "#C4B5FD", letterSpacing: "0.03em" }}>サークルに参加する</span>
         </motion.div>
-      </div>
-
-      {/* サークルを登録 — bottom right */}
-      <div style={{ position: "fixed", bottom: 32, right: 20, zIndex: 50 }}>
-        <Link href="/circle/new">
-          <motion.div
-            whileTap={{ scale: 0.94 }}
-            className="glass rounded-2xl flex items-center gap-2 px-4 py-3 cursor-pointer"
-            style={{
-              border: "1px solid rgba(255,255,255,0.18)",
-              background: "rgba(13,13,15,0.7)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-            }}
-          >
-            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.6)" }}>＋</span>
-            <span style={{ fontSize: 13, color: "var(--silver-bright)", letterSpacing: "0.03em" }}>登録</span>
-          </motion.div>
-        </Link>
       </div>
 
       {/* Join modal */}

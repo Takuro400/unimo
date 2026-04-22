@@ -4,6 +4,8 @@ export interface Circle {
   description: string | null;
   emoji: string;
   category: string | null;
+  icon_url: string | null;
+  background_url: string | null;
   created_by: string | null;
   created_at: string;
 }

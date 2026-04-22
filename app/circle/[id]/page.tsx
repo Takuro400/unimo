@@ -95,6 +95,19 @@ export default function CircleDetailPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto pb-28">
+        {/* Background banner */}
+        {circle.background_url && (
+          <div style={{ position: "relative", width: "100%", height: 180, overflow: "hidden", marginBottom: 12 }}>
+            {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(circle.background_url) ? (
+              <video src={circle.background_url} autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={circle.background_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            )}
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, #0D0D0F 100%)" }} />
+          </div>
+        )}
+
         {/* Circle info */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -103,10 +116,15 @@ export default function CircleDetailPage() {
           className="px-4 pb-5 flex items-start gap-3"
         >
           <div
-            className="glass rounded-2xl flex items-center justify-center flex-shrink-0"
+            className="glass rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
             style={{ width: 56, height: 56, background: "rgba(255,255,255,0.04)" }}
           >
-            <span style={{ fontSize: 28 }}>{circle.emoji}</span>
+            {circle.icon_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={circle.icon_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 28 }}>{circle.emoji}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0 pt-1">
             {circle.category && (
@@ -126,6 +144,20 @@ export default function CircleDetailPage() {
               {posts.length}件の投稿
             </p>
           </div>
+          {isMember && (
+            <Link href={`/circle/${id}/settings`} style={{ flexShrink: 0 }}>
+              <motion.div
+                whileTap={{ scale: 0.92 }}
+                className="glass rounded-full flex items-center justify-center"
+                style={{ width: 36, height: 36, border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </motion.div>
+            </Link>
+          )}
         </motion.div>
 
         {/* Divider */}
