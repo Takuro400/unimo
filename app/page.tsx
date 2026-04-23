@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { MOCK_CIRCLES, MOCK_POSTS } from "@/lib/mock-data";
 import type { Circle, Post } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import BottomNav from "@/components/BottomNav";
 
 type CircleFeedItem = { circle: Circle; posts: Post[] };
 
@@ -63,6 +64,16 @@ export default function Home() {
   const [feed, setFeed] = useState<CircleFeedItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+
+  // First-time welcome: prompt for nickname if not set
+  useEffect(() => {
+    if (!user) return;
+    if (user.id === "dev-user") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = (user.user_metadata ?? {}) as any;
+    if (!meta.nickname?.trim()) setShowNicknameModal(true);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -152,8 +163,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* 参加する FAB */}
-      <div style={{ position: "fixed", bottom: 32, right: 20, zIndex: 50 }}>
+      {/* 参加する FAB — sits above the bottom nav */}
+      <div style={{ position: "fixed", bottom: 116, right: 20, zIndex: 55 }}>
         <motion.div
           whileTap={{ scale: 0.94 }}
           onClick={() => setShowJoinModal(true)}
@@ -169,6 +180,8 @@ export default function Home() {
         </motion.div>
       </div>
 
+      <BottomNav />
+
       {/* Join modal */}
       <AnimatePresence>
         {showJoinModal && (
@@ -182,7 +195,150 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+
+      {/* First-time nickname setup */}
+      <AnimatePresence>
+        {showNicknameModal && (
+          <NicknameSetupModal onDone={() => setShowNicknameModal(false)} />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function NicknameSetupModal({ onDone }: { onDone: () => void }) {
+  const [nickname, setNickname] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSave() {
+    const v = nickname.trim();
+    if (!v) {
+      setError("ニックネームを入力してください");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      if (supabase) {
+        const { error: e } = await supabase.auth.updateUser({ data: { nickname: v } });
+        if (e) throw e;
+      }
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.7)",
+          zIndex: 100,
+          backdropFilter: "blur(6px)",
+        }}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{ type: "spring", damping: 22, stiffness: 280 }}
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 101,
+          width: "min(92vw, 380px)",
+          background: "#141416",
+          border: "1px solid rgba(167,139,250,0.22)",
+          borderRadius: 24,
+          padding: "32px 24px 24px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(167,139,250,0.08)",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              margin: "0 auto 14px",
+              background: "linear-gradient(135deg, rgba(167,139,250,0.3), rgba(167,139,250,0.1))",
+              border: "1px solid rgba(167,139,250,0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 26,
+            }}
+          >
+            ✨
+          </div>
+          <p className="text-base font-semibold silver-text" style={{ letterSpacing: "0.05em" }}>
+            ニックネームを決めよう
+          </p>
+          <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+            アプリ内で表示される名前です。<br />
+            あとからマイページで変えられます。
+          </p>
+        </div>
+        <input
+          autoFocus
+          type="text"
+          maxLength={20}
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="例: たくろう"
+          className="w-full rounded-xl px-4 py-3"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#E0E0E8",
+            fontSize: 15,
+            outline: "none",
+            textAlign: "center",
+            letterSpacing: "0.05em",
+          }}
+        />
+        {error && (
+          <p className="text-xs mt-2 text-center" style={{ color: "rgba(248,113,113,0.85)" }}>
+            {error}
+          </p>
+        )}
+        <motion.button
+          whileTap={saving ? undefined : { scale: 0.97 }}
+          onClick={saving ? undefined : handleSave}
+          disabled={saving || !nickname.trim()}
+          className="mt-4 w-full rounded-xl py-3"
+          style={{
+            background:
+              saving || !nickname.trim()
+                ? "rgba(255,255,255,0.04)"
+                : "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
+            border:
+              saving || !nickname.trim()
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(167,139,250,0.38)",
+            color: saving || !nickname.trim() ? "rgba(255,255,255,0.3)" : "#C4B5FD",
+            fontSize: 13,
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            cursor: saving || !nickname.trim() ? "not-allowed" : "pointer",
+            transition: "all 0.25s ease",
+          }}
+        >
+          {saving ? "保存中..." : "はじめる"}
+        </motion.button>
+      </motion.div>
+    </>
   );
 }
 
