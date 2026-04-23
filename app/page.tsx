@@ -244,9 +244,11 @@ function CircleCard({
   }
 
   const variants = {
-    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+    // d > 0 = 右スワイプ: 新しい写真が左から右へ入ってくる(指と同じ方向)
+    // d < 0 = 左スワイプ: 新しい写真が右から左へ入ってくる
+    enter: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
     center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
+    exit: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
   };
 
   return (
