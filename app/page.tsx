@@ -425,11 +425,11 @@ function CircleCard({
           )}
         </div>
 
-        {/* Progress dots — show position within the swipe window */}
+        {/* Progress dots — 左=新しい / 右=古い(写真ストリップの並びに合わせる) */}
         {maxIdx > minIdx && (
           <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
             {Array.from({ length: maxIdx - minIdx + 1 }).map((_, i) => {
-              const dotIdx = minIdx + i;
+              const dotIdx = maxIdx - i;
               const active = dotIdx === idx;
               return (
                 <div
