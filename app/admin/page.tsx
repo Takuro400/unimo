@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { Circle } from "@/lib/types";
@@ -43,6 +43,9 @@ export default function AdminPage() {
   const [description, setDescription] = useState("");
   const [emoji, setEmoji] = useState("🎯");
   const [category, setCategory] = useState("文化系");
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -119,6 +122,17 @@ export default function AdminPage() {
           .single();
         if (circleErr) throw circleErr;
 
+        // アイコン画像アップロード
+        if (iconFile) {
+          const ext = iconFile.name.split(".").pop();
+          const path = `circles/${circleData.id}/icon-${Date.now()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("posts").upload(path, iconFile, { contentType: iconFile.type, upsert: true });
+          if (!upErr) {
+            const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
+            await supabase.from("circles").update({ icon_url: urlData.publicUrl }).eq("id", circleData.id);
+          }
+        }
+
         const { error: codeErr } = await supabase
           .from("invite_codes")
           .insert({ circle_id: circleData.id, code });
@@ -129,6 +143,7 @@ export default function AdminPage() {
 
       setGeneratedCode({ code, circleName: name });
       setName(""); setDescription(""); setEmoji("🎯"); setCategory("文化系");
+      setIconFile(null); setIconPreview(null);
     } catch (err) {
       console.error(err);
       setError("作成に失敗しました。もう一度お試しください。");
@@ -228,9 +243,33 @@ export default function AdminPage() {
           <p className="text-sm font-semibold silver-text mb-4">サークルを作成</p>
 
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
+
+            {/* Icon image upload */}
+            <div>
+              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>アイコン画像（任意）</p>
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={() => iconInputRef.current?.click()}
+                  className="rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center flex-shrink-0"
+                  style={{ width: 64, height: 64, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }}
+                >
+                  <input ref={iconInputRef} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; setIconFile(f); setIconPreview(URL.createObjectURL(f)); }} style={{ display: "none" }} />
+                  {iconPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={iconPreview} alt="icon" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <span style={{ fontSize: 28 }}>📷</span>
+                  )}
+                </div>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                  {iconPreview ? "タップして変更" : "タップして画像を選択\n未設定の場合は絵文字が使われます"}
+                </p>
+              </div>
+            </div>
+
             {/* Emoji */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>アイコン</p>
+              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>絵文字（画像未設定時）</p>
               <div className="grid grid-cols-8 gap-1.5">
                 {EMOJIS.map((e) => (
                   <motion.button

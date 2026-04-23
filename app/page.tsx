@@ -196,7 +196,19 @@ function FeedCard({ post, index, onNavigate }: { post: FeedPost; index: number; 
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 20 }}>{post.circle.emoji}</span>
+          {post.circle.icon_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.circle.icon_url}
+              alt=""
+              loading="lazy"
+              style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(255,255,255,0.25)" }}
+            />
+          ) : (
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>
+              {post.circle.emoji}
+            </div>
+          )}
           <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.02em" }}>
             {post.circle.name}
           </span>
