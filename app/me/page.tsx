@@ -529,93 +529,119 @@ function FavoritesOrbit({
         })}
       </div>
 
-      {/* Central avatar */}
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={onAvatarTap}
+      {/* Central avatar — wrapper handles positioning so framer-motion's whileTap transform doesn't override it */}
+      <div
         style={{
           position: "absolute",
           left: "50%",
           top: "50%",
-          transform: "translate(-50%, -50%)",
+          marginLeft: -centerAvatarSize / 2,
+          marginTop: -centerAvatarSize / 2,
           width: centerAvatarSize,
           height: centerAvatarSize,
-          borderRadius: "50%",
-          background: avatarUrl
-            ? "transparent"
-            : "linear-gradient(135deg, rgba(167,139,250,0.32), rgba(167,139,250,0.12))",
-          border: "2px solid rgba(167,139,250,0.35)",
-          cursor: "pointer",
-          overflow: "hidden",
-          padding: 0,
-          boxShadow: "0 10px 30px rgba(0,0,0,0.4), 0 0 24px rgba(167,139,250,0.18)",
           zIndex: 2,
         }}
       >
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-          <span
-            style={{
-              fontSize: 40,
-              color: "#E9E0FF",
-              fontWeight: 600,
-              letterSpacing: "0.05em",
-            }}
-          >
-            {initial}
-          </span>
-        )}
-        {uploading && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.55)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={onAvatarTap}
+          style={{
+            position: "relative",
+            display: "block",
+            width: "100%",
+            height: "100%",
+            boxSizing: "border-box",
+            borderRadius: "50%",
+            background: avatarUrl
+              ? "rgba(255,255,255,0.04)"
+              : "linear-gradient(135deg, rgba(167,139,250,0.32), rgba(167,139,250,0.12))",
+            border: "2px solid rgba(167,139,250,0.35)",
+            cursor: "pointer",
+            overflow: "hidden",
+            padding: 0,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.4), 0 0 24px rgba(167,139,250,0.18)",
+          }}
+        >
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt=""
               style={{
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                border: "2px solid rgba(255,255,255,0.2)",
-                borderTopColor: "rgba(255,255,255,0.85)",
-                animation: "spin 0.8s linear infinite",
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
               }}
             />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-        {/* Edit badge */}
+          ) : (
+            <span
+              style={{
+                display: "flex",
+                width: "100%",
+                height: "100%",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 40,
+                color: "#E9E0FF",
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                lineHeight: 1,
+              }}
+            >
+              {initial}
+            </span>
+          )}
+          {uploading && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(0,0,0,0.55)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.2)",
+                  borderTopColor: "rgba(255,255,255,0.85)",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+        </motion.button>
+        {/* Edit badge — positioned on the wrapper so it stays put during the button's tap-scale animation */}
         <span
           style={{
             position: "absolute",
-            bottom: 2,
-            right: 2,
-            width: 22,
-            height: 22,
+            bottom: 0,
+            right: 0,
+            width: 24,
+            height: 24,
             borderRadius: "50%",
             background: "#A78BFA",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             border: "2px solid #0D0D0F",
-            fontSize: 10,
+            fontSize: 11,
             color: "#0D0D0F",
+            pointerEvents: "none",
+            lineHeight: 1,
           }}
         >
           ✎
         </span>
-      </motion.button>
+      </div>
     </div>
   );
 }
