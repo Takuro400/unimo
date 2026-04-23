@@ -44,7 +44,8 @@ export default function Home() {
         const { data } = await supabase
           .from("posts")
           .select("*, circles(*)")
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .limit(30);
 
         if (data?.length) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -153,18 +154,30 @@ export default function Home() {
 
 function FeedCard({ post, index, onNavigate }: { post: FeedPost; index: number; onNavigate: (id: string) => void }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
+  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(post.media_url ?? "");
   return (
     <div
       onClick={() => onNavigate(post.circle_id)}
       style={{ width: "100%", height: "80svh", scrollSnapAlign: "start", position: "relative", overflow: "hidden", cursor: "pointer" }}
     >
       {post.media_url ? (
+        isVideo ? (
+          <video
+            src={post.media_url}
+            autoPlay muted loop playsInline
+            preload="none"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={post.media_url}
           alt={post.caption ?? ""}
+          loading={index === 0 ? "eager" : "lazy"}
+          decoding="async"
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
+        )
       ) : (
         <div
           className={`bg-gradient-to-br ${gradient}`}

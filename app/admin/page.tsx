@@ -45,6 +45,8 @@ export default function AdminPage() {
   const [category, setCategory] = useState("文化系");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const fetchCircles = useCallback(async () => {
     if (!supabase) return;
@@ -74,6 +76,23 @@ export default function AdminPage() {
       setAuthed(true);
     } else {
       setPwError("パスワードが違います");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!supabase) return;
+    setDeletingId(id);
+    try {
+      await supabase.from("invite_codes").delete().eq("circle_id", id);
+      await supabase.from("circle_members").delete().eq("circle_id", id);
+      await supabase.from("posts").delete().eq("circle_id", id);
+      await supabase.from("circles").delete().eq("id", id);
+      await fetchCircles();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
     }
   }
 
@@ -320,11 +339,45 @@ export default function AdminPage() {
                       {c.category && <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{c.category}</p>}
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-3">
-                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>招待コード</p>
-                    <p className="text-base font-bold" style={{ color: "#A78BFA", letterSpacing: "0.18em" }}>
-                      {c.invite_code ?? "—"}
-                    </p>
+                  <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                    <div className="text-right">
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>招待コード</p>
+                      <p className="text-base font-bold" style={{ color: "#A78BFA", letterSpacing: "0.18em" }}>
+                        {c.invite_code ?? "—"}
+                      </p>
+                    </div>
+                    {confirmId === c.id ? (
+                      <div className="flex gap-1.5">
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => handleDelete(c.id)}
+                          disabled={deletingId === c.id}
+                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(248,113,113,0.18)", border: "1px solid rgba(248,113,113,0.4)", color: "rgba(248,113,113,0.9)", cursor: "pointer" }}
+                        >
+                          {deletingId === c.id ? "…" : "削除"}
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.92 }}
+                          onClick={() => setConfirmId(null)}
+                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+                        >
+                          戻る
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <motion.button
+                        whileTap={{ scale: 0.88 }}
+                        onClick={() => setConfirmId(c.id)}
+                        style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(248,113,113,0.6)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               ))}

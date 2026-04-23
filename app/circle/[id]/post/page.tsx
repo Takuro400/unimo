@@ -68,7 +68,7 @@ export default function PostPage() {
       if (isSupabaseConfigured && supabase && user && user.id !== "dev-user") {
         const ext = file.name.split(".").pop();
         const path = `${id}/${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage.from("posts").upload(path, file);
+        const { error: uploadError } = await supabase.storage.from("posts").upload(path, file, { contentType: file.type, upsert: true });
         if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
@@ -84,6 +84,7 @@ export default function PostPage() {
         if (insertError) throw insertError;
       }
       setDone(true);
+      setTimeout(() => router.push("/"), 1500);
     } catch (err) {
       console.error(err);
       setError("投稿に失敗しました。もう一度お試しください。");

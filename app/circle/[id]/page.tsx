@@ -99,10 +99,10 @@ export default function CircleDetailPage() {
         {circle.background_url && (
           <div style={{ position: "relative", width: "100%", height: 180, overflow: "hidden", marginBottom: 12 }}>
             {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(circle.background_url) ? (
-              <video src={circle.background_url} autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <video src={circle.background_url} autoPlay muted loop playsInline preload="metadata" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={circle.background_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={circle.background_url} alt="" loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, #0D0D0F 100%)" }} />
           </div>
@@ -256,7 +256,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
     >
       {post.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.media_url} alt={post.caption ?? ""} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
+        <img src={post.media_url} alt={post.caption ?? ""} loading="lazy" decoding="async" style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
       ) : (
         <div className={`bg-gradient-to-br ${gradient} flex items-center justify-center`} style={{ height: 140 }}>
           <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>

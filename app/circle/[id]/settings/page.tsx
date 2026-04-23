@@ -100,7 +100,7 @@ export default function SettingsPage() {
       if (iconFile) {
         const ext = iconFile.name.split(".").pop();
         const path = `circles/${id}/icon-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("posts").upload(path, iconFile);
+        const { error: upErr } = await supabase.storage.from("posts").upload(path, iconFile, { contentType: iconFile.type, upsert: true });
         if (upErr) throw upErr;
         const { data } = supabase.storage.from("posts").getPublicUrl(path);
         iconUrl = data.publicUrl;
@@ -109,7 +109,7 @@ export default function SettingsPage() {
       if (backgroundFile) {
         const ext = backgroundFile.name.split(".").pop();
         const path = `circles/${id}/bg-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("posts").upload(path, backgroundFile);
+        const { error: upErr } = await supabase.storage.from("posts").upload(path, backgroundFile, { contentType: backgroundFile.type, cacheControl: "3600", upsert: true });
         if (upErr) throw upErr;
         const { data } = supabase.storage.from("posts").getPublicUrl(path);
         backgroundUrl = data.publicUrl;

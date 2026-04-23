@@ -18,10 +18,21 @@ export function useAuth(): User | null | undefined {
       return;
     }
 
+    // 4秒以内に応答がなければログインへ
+    const timeout = setTimeout(() => {
+      setUser(null);
+      router.replace("/login");
+    }, 4000);
+
     supabase.auth.getSession().then(({ data }) => {
+      clearTimeout(timeout);
       const u = data.session?.user ?? null;
       setUser(u);
       if (!u) router.replace("/login");
+    }).catch(() => {
+      clearTimeout(timeout);
+      setUser(null);
+      router.replace("/login");
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -30,7 +41,7 @@ export function useAuth(): User | null | undefined {
       if (!u) router.replace("/login");
     });
 
-    return () => subscription.unsubscribe();
+    return () => { clearTimeout(timeout); subscription.unsubscribe(); };
   }, [router]);
 
   return user;
