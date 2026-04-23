@@ -40,6 +40,8 @@ export default function CircleDetailPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favLimitToast, setFavLimitToast] = useState(false);
 
   const [view, setView] = useState<View>("month");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -64,9 +66,34 @@ export default function CircleDetailPage() {
         setPosts(MOCK_POSTS[id] ?? []);
         setIsMember(true);
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const meta = (user.user_metadata ?? {}) as any;
+      setFavorites(Array.isArray(meta.favorites) ? meta.favorites : []);
       setLoading(false);
     })();
   }, [user, id]);
+
+  async function toggleFavorite(postId: string) {
+    if (!isMember) return;
+    const already = favorites.includes(postId);
+    let next: string[];
+    if (already) {
+      next = favorites.filter((id) => id !== postId);
+    } else {
+      if (favorites.length >= 6) {
+        setFavLimitToast(true);
+        setTimeout(() => setFavLimitToast(false), 2200);
+        return;
+      }
+      next = [...favorites, postId];
+    }
+    setFavorites(next);
+    if (supabase && user?.id !== "dev-user") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentMeta = (user?.user_metadata ?? {}) as any;
+      await supabase.auth.updateUser({ data: { ...currentMeta, favorites: next } });
+    }
+  }
 
   const monthPosts = useMemo(
     () => posts.filter((p) => p.month === selectedMonth),
@@ -301,13 +328,49 @@ export default function CircleDetailPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {dayPosts.map((post, i) => (
-                  <PostCard key={post.id} post={post} index={i} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    index={i}
+                    canFavorite={isMember}
+                    favorited={favorites.includes(post.id)}
+                    onToggleFavorite={() => toggleFavorite(post.id)}
+                  />
                 ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Favorite limit toast */}
+      <AnimatePresence>
+        {favLimitToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            style={{
+              position: "fixed",
+              bottom: 112,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 80,
+              padding: "10px 18px",
+              borderRadius: 12,
+              background: "rgba(20,20,22,0.95)",
+              border: "1px solid rgba(167,139,250,0.3)",
+              color: "rgba(196,181,253,0.9)",
+              fontSize: 12,
+              letterSpacing: "0.03em",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            お気に入りは6つまで。マイページで整理してね
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Fixed bottom CTA — swaps by view */}
       <div
@@ -493,7 +556,19 @@ function OpenButton({
   );
 }
 
-function PostCard({ post, index }: { post: Post; index: number }) {
+function PostCard({
+  post,
+  index,
+  canFavorite,
+  favorited,
+  onToggleFavorite,
+}: {
+  post: Post;
+  index: number;
+  canFavorite: boolean;
+  favorited: boolean;
+  onToggleFavorite: () => void;
+}) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   return (
     <motion.div
@@ -501,6 +576,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
       className="glass rounded-xl overflow-hidden"
+      style={{ position: "relative" }}
     >
       {post.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -509,6 +585,45 @@ function PostCard({ post, index }: { post: Post; index: number }) {
         <div className={`bg-gradient-to-br ${gradient} flex items-center justify-center`} style={{ height: 140 }}>
           <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>
         </div>
+      )}
+      {canFavorite && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          aria-label={favorited ? "お気に入りを解除" : "お気に入りに追加"}
+          style={{
+            position: "absolute",
+            top: 6,
+            right: 6,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: favorited ? "rgba(248,113,113,0.18)" : "rgba(0,0,0,0.45)",
+            border: favorited ? "1px solid rgba(248,113,113,0.6)" : "1px solid rgba(255,255,255,0.14)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill={favorited ? "#F87171" : "none"}
+            stroke={favorited ? "#F87171" : "rgba(255,255,255,0.85)"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </motion.button>
       )}
       {post.caption && (
         <div className="px-2.5 py-2">
