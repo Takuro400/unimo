@@ -11,7 +11,6 @@ import type { Circle, Post } from "@/lib/types";
 import Dial from "@/components/Dial";
 
 const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-const DAYS = Array.from({ length: 31 }, (_, i) => `${i + 1}日`);
 const GRADIENTS = [
   "from-slate-700 to-slate-900",
   "from-zinc-700 to-zinc-900",
@@ -24,6 +23,11 @@ type View = "month" | "day" | "posts";
 function getPostDay(post: Post): number {
   const d = new Date(post.created_at);
   return isNaN(d.getTime()) ? 1 : d.getDate();
+}
+
+function daysInMonth(year: number, month: number): number {
+  // month is 1-12; Date with day=0 gives the last day of the previous month
+  return new Date(year, month, 0).getDate();
 }
 
 export default function CircleDetailPage() {
@@ -81,6 +85,23 @@ export default function CircleDetailPage() {
     () => new Set(monthPosts.map((p) => getPostDay(p) - 1)),
     [monthPosts]
   );
+
+  const dayCount = useMemo(() => {
+    const year = monthPosts[0]?.year ?? new Date().getFullYear();
+    const calendarDays = daysInMonth(year, selectedMonth);
+    const postMaxDay = monthPosts.reduce((mx, p) => Math.max(mx, getPostDay(p)), 0);
+    return Math.max(calendarDays, postMaxDay);
+  }, [monthPosts, selectedMonth]);
+
+  const daysArray = useMemo(
+    () => Array.from({ length: dayCount }, (_, i) => `${i + 1}日`),
+    [dayCount]
+  );
+
+  // Clamp selectedDay if the month changed and the day no longer exists
+  useEffect(() => {
+    if (selectedDay > dayCount) setSelectedDay(Math.max(1, dayCount));
+  }, [dayCount, selectedDay]);
 
   const monthPreview = monthPosts.slice(0, 3);
   const dayPreview = dayPosts.slice(0, 3);
@@ -215,31 +236,22 @@ export default function CircleDetailPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="flex flex-col items-center px-4 pt-2"
+              className="flex flex-col items-center px-4 pt-1"
             >
               <PreviewStrip
                 label={`${selectedMonth}月のプレビュー`}
                 previews={monthPreview}
                 total={monthPosts.length}
               />
-              <div className="mt-4">
+              <div className="mt-3">
                 <Dial
                   items={MONTHS}
                   initialIndex={selectedMonth - 1}
                   onChange={(idx) => setSelectedMonth(idx + 1)}
                   activeIndices={monthsWithPosts}
-                  size={280}
+                  size={240}
                 />
               </div>
-              <OpenButton
-                label={
-                  monthPosts.length > 0
-                    ? `${selectedMonth}月を開く`
-                    : "この月は投稿がありません"
-                }
-                disabled={monthPosts.length === 0}
-                onClick={onPickMonth}
-              />
             </motion.div>
           )}
 
@@ -250,31 +262,23 @@ export default function CircleDetailPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="flex flex-col items-center px-4 pt-2"
+              className="flex flex-col items-center px-4 pt-1"
             >
               <PreviewStrip
                 label={`${selectedMonth}月${selectedDay}日のプレビュー`}
                 previews={dayPreview}
                 total={dayPosts.length}
               />
-              <div className="mt-4">
+              <div className="mt-3">
                 <Dial
-                  items={DAYS}
-                  initialIndex={selectedDay - 1}
+                  key={`day-dial-${dayCount}`}
+                  items={daysArray}
+                  initialIndex={Math.min(selectedDay, dayCount) - 1}
                   onChange={(idx) => setSelectedDay(idx + 1)}
                   activeIndices={daysWithPosts}
-                  size={300}
+                  size={260}
                 />
               </div>
-              <OpenButton
-                label={
-                  dayPosts.length > 0
-                    ? `${selectedMonth}月${selectedDay}日を開く`
-                    : "この日は投稿がありません"
-                }
-                disabled={dayPosts.length === 0}
-                onClick={onPickDay}
-              />
             </motion.div>
           )}
 
@@ -305,9 +309,41 @@ export default function CircleDetailPage() {
         </AnimatePresence>
       </div>
 
-      {/* Post button — members only, always available */}
-      {isMember && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, padding: "16px 20px 32px", background: "linear-gradient(to top, #0D0D0F 60%, transparent)" }}>
+      {/* Fixed bottom CTA — swaps by view */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          padding: "16px 20px 32px",
+          background: "linear-gradient(to top, #0D0D0F 60%, transparent)",
+        }}
+      >
+        {view === "month" && (
+          <OpenButton
+            label={
+              monthPosts.length > 0
+                ? `${selectedMonth}月を開く`
+                : "この月は投稿がありません"
+            }
+            disabled={monthPosts.length === 0}
+            onClick={onPickMonth}
+          />
+        )}
+        {view === "day" && (
+          <OpenButton
+            label={
+              dayPosts.length > 0
+                ? `${selectedMonth}月${selectedDay}日を開く`
+                : "この日は投稿がありません"
+            }
+            disabled={dayPosts.length === 0}
+            onClick={onPickDay}
+          />
+        )}
+        {view === "posts" && isMember && (
           <Link href={`/circle/${id}/post`} style={{ textDecoration: "none", display: "block" }}>
             <motion.div
               whileTap={{ scale: 0.97 }}
@@ -322,8 +358,8 @@ export default function CircleDetailPage() {
               <span style={{ fontSize: 14, fontWeight: 600, color: "#C4B5FD", letterSpacing: "0.04em" }}>投稿する</span>
             </motion.div>
           </Link>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -433,21 +469,21 @@ function OpenButton({
 }) {
   return (
     <motion.button
-      whileTap={disabled ? undefined : { scale: 0.96 }}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className="mt-6 rounded-2xl px-6 py-3"
+      className="w-full rounded-2xl py-4"
       style={{
         background: disabled
           ? "rgba(255,255,255,0.04)"
-          : "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.08))",
+          : "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.10))",
         border: disabled
           ? "1px solid rgba(255,255,255,0.06)"
           : "1px solid rgba(167,139,250,0.35)",
         color: disabled ? "rgba(255,255,255,0.25)" : "#C4B5FD",
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: 600,
-        letterSpacing: "0.06em",
+        letterSpacing: "0.05em",
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.25s ease",
       }}
