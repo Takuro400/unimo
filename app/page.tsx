@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { motion, AnimatePresence, PanInfo, useMotionValue, animate } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import { MOCK_CIRCLES, MOCK_POSTS } from "@/lib/mock-data";
@@ -186,6 +186,65 @@ export default function Home() {
   );
 }
 
+function PhotoLayer({
+  post,
+  circleEmoji,
+  gradient,
+  leftPercent,
+  eager,
+}: {
+  post: Post;
+  circleEmoji: string;
+  gradient: string;
+  leftPercent: number;
+  eager?: boolean;
+}) {
+  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(post.media_url ?? "");
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: `${leftPercent}%`,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
+    >
+      {post.media_url ? (
+        isVideo ? (
+          <video
+            src={post.media_url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="none"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={post.media_url}
+            alt={post.caption ?? ""}
+            loading={eager ? "eager" : "lazy"}
+            decoding="async"
+            draggable={false}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        )
+      ) : (
+        <div
+          className={`bg-gradient-to-br ${gradient}`}
+          style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <span style={{ fontSize: 80, opacity: 0.12 }}>{circleEmoji}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CircleCard({
   circle,
   posts,
@@ -204,34 +263,68 @@ function CircleCard({
   const maxIdx = Math.min(lastIdx, initialIdx + 2);
 
   const [idx, setIdx] = useState(initialIdx);
-  const [dir, setDir] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
   const draggedRef = useRef(false);
+  const animatingRef = useRef(false);
 
   const current = posts[idx];
-  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(current?.media_url ?? "");
+  // Right swipe = newer (idx + 1); it needs to appear from the left, so place at leftPercent: -100
+  const newerPost = idx + 1 <= lastIdx ? posts[idx + 1] : null;
+  // Left swipe = older (idx - 1); appear from the right, leftPercent: +100
+  const olderPost = idx - 1 >= 0 ? posts[idx - 1] : null;
+
+  function getWidth() {
+    return containerRef.current?.offsetWidth ?? (typeof window !== "undefined" ? window.innerWidth : 375);
+  }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    const swipe = info.offset.x + info.velocity.x * 0.1;
-    const THRESHOLD = 60;
+    if (animatingRef.current) return;
+    if (Math.abs(info.offset.x) > 8) draggedRef.current = true;
 
-    if (Math.abs(info.offset.x) > 10) draggedRef.current = true;
+    const w = getWidth();
+    const threshold = Math.min(80, w * 0.2);
+    const swipe = info.offset.x + info.velocity.x * 0.15;
 
-    if (swipe > THRESHOLD) {
+    const springBack = () =>
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 40 });
+
+    if (swipe > threshold) {
       // 右スワイプ = 新しい写真
       if (idx >= maxIdx) {
+        springBack();
         onNavigate(circle.id);
-      } else {
-        setDir(1);
-        setIdx(idx + 1);
+        return;
       }
-    } else if (swipe < -THRESHOLD) {
+      animatingRef.current = true;
+      animate(x, w, {
+        duration: 0.28,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        onComplete: () => {
+          setIdx((i) => i + 1);
+          x.set(0);
+          animatingRef.current = false;
+        },
+      });
+    } else if (swipe < -threshold) {
       // 左スワイプ = 昔の写真
       if (idx <= minIdx) {
+        springBack();
         onNavigate(circle.id);
-      } else {
-        setDir(-1);
-        setIdx(idx - 1);
+        return;
       }
+      animatingRef.current = true;
+      animate(x, -w, {
+        duration: 0.28,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        onComplete: () => {
+          setIdx((i) => i - 1);
+          x.set(0);
+          animatingRef.current = false;
+        },
+      });
+    } else {
+      springBack();
     }
   }
 
@@ -243,16 +336,9 @@ function CircleCard({
     onNavigate(circle.id);
   }
 
-  const variants = {
-    // d > 0 = 右スワイプ: 新しい写真が左から右へ入ってくる(指と同じ方向)
-    // d < 0 = 左スワイプ: 新しい写真が右から左へ入ってくる
-    enter: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
-  };
-
   return (
     <div
+      ref={containerRef}
       style={{
         width: "100%",
         height: "80svh",
@@ -265,60 +351,42 @@ function CircleCard({
       <motion.div
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.25}
+        dragElastic={1}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
         onClick={handleClick}
         style={{
-          width: "100%",
-          height: "100%",
+          x,
           position: "absolute",
           inset: 0,
           touchAction: "pan-y",
         }}
       >
-        <AnimatePresence initial={false} mode="wait" custom={dir}>
-          <motion.div
-            key={current?.id ?? "empty"}
-            custom={dir}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ x: { type: "tween", duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }, opacity: { duration: 0.2 } }}
-            style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
-          >
-            {current?.media_url ? (
-              isVideo ? (
-                <video
-                  src={current.media_url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="none"
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={current.media_url}
-                  alt={current.caption ?? ""}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  draggable={false}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-                />
-              )
-            ) : (
-              <div
-                className={`bg-gradient-to-br ${gradient}`}
-                style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
-              >
-                <span style={{ fontSize: 80, opacity: 0.12 }}>{circle.emoji}</span>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {newerPost && (
+          <PhotoLayer
+            post={newerPost}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={-100}
+          />
+        )}
+        {current && (
+          <PhotoLayer
+            post={current}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={0}
+            eager={index === 0}
+          />
+        )}
+        {olderPost && (
+          <PhotoLayer
+            post={olderPost}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={100}
+          />
+        )}
       </motion.div>
 
       {/* Top overlay — circle name + progress dots */}
