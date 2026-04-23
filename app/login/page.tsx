@@ -14,6 +14,20 @@ export default function LoginPage() {
 
   const isKyutechEmail = (e: string) => e.endsWith("@mail.kyutech.jp");
 
+  function translateAuthError(raw: string): string {
+    const m = raw.toLowerCase();
+    if (m.includes("rate limit") || m.includes("too many") || m.includes("429")) {
+      return "短時間に送信しすぎました。しばらく待ってから再度お試しください（通常は数十秒〜1時間ほど）。";
+    }
+    if (m.includes("invalid") && m.includes("email")) {
+      return "メールアドレスの形式が正しくありません。";
+    }
+    if (m.includes("network") || m.includes("fetch")) {
+      return "ネットワークエラーです。通信環境をご確認ください。";
+    }
+    return raw || "送信に失敗しました。もう一度お試しください。";
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -35,7 +49,7 @@ export default function LoginPage() {
       setStep("sent");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || "送信に失敗しました。もう一度お試しください。");
+      setError(translateAuthError(msg));
     } finally {
       setLoading(false);
     }

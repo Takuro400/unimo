@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import { MOCK_CIRCLES, MOCK_POSTS } from "@/lib/mock-data";
 import type { Circle, Post } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
-type FeedPost = Post & { circle: Circle };
+type CircleFeedItem = { circle: Circle; posts: Post[] };
 
 const GRADIENTS = [
   "from-slate-700 to-slate-900",
@@ -21,19 +21,46 @@ const GRADIENTS = [
   "from-slate-600 to-zinc-900",
 ];
 
-function buildMockFeed(): FeedPost[] {
+function groupPostsByCircle(
+  posts: (Post & { circle: Circle })[]
+): CircleFeedItem[] {
+  const byCircle = new Map<string, CircleFeedItem>();
+  for (const p of posts) {
+    if (!p.circle) continue;
+    let entry = byCircle.get(p.circle_id);
+    if (!entry) {
+      entry = { circle: p.circle, posts: [] };
+      byCircle.set(p.circle_id, entry);
+    }
+    entry.posts.push(p);
+  }
+  const items = Array.from(byCircle.values());
+  for (const item of items) {
+    item.posts.sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }
+  items.sort((a, b) => {
+    const la = a.posts[a.posts.length - 1]?.created_at ?? "";
+    const lb = b.posts[b.posts.length - 1]?.created_at ?? "";
+    return new Date(lb).getTime() - new Date(la).getTime();
+  });
+  return items;
+}
+
+function buildMockFeed(): CircleFeedItem[] {
   const circleMap = Object.fromEntries(MOCK_CIRCLES.map((c) => [c.id, c]));
-  return Object.values(MOCK_POSTS)
+  const enriched = Object.values(MOCK_POSTS)
     .flat()
     .filter((p) => circleMap[p.circle_id])
-    .map((p) => ({ ...p, circle: circleMap[p.circle_id] }))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .map((p) => ({ ...p, circle: circleMap[p.circle_id] }));
+  return groupPostsByCircle(enriched);
 }
 
 export default function Home() {
   const user = useAuth();
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedPost[]>([]);
+  const [feed, setFeed] = useState<CircleFeedItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
@@ -45,11 +72,12 @@ export default function Home() {
           .from("posts")
           .select("*, circles(*)")
           .order("created_at", { ascending: false })
-          .limit(30);
+          .limit(150);
 
         if (data?.length) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFeed(data.map((p: any) => ({ ...p, circle: p.circles })));
+          const enriched = (data as any[]).map((p) => ({ ...p, circle: p.circles }));
+          setFeed(groupPostsByCircle(enriched));
         } else {
           setFeed(buildMockFeed());
         }
@@ -111,8 +139,14 @@ export default function Home() {
             scrollbarWidth: "none",
           }}
         >
-          {feed.map((post, i) => (
-            <FeedCard key={post.id} post={post} index={i} onNavigate={(id) => router.push(`/circle/${id}`)} />
+          {feed.map((item, i) => (
+            <CircleCard
+              key={item.circle.id}
+              circle={item.circle}
+              posts={item.posts}
+              index={i}
+              onNavigate={(id) => router.push(`/circle/${id}`)}
+            />
           ))}
           <div style={{ height: "20svh", flexShrink: 0 }} />
         </div>
@@ -152,85 +186,215 @@ export default function Home() {
   );
 }
 
-function FeedCard({ post, index, onNavigate }: { post: FeedPost; index: number; onNavigate: (id: string) => void }) {
+function CircleCard({
+  circle,
+  posts,
+  index,
+  onNavigate,
+}: {
+  circle: Circle;
+  posts: Post[];
+  index: number;
+  onNavigate: (id: string) => void;
+}) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
-  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(post.media_url ?? "");
+  const lastIdx = posts.length - 1;
+  const initialIdx = Math.max(0, lastIdx - 2);
+  const minIdx = Math.max(0, initialIdx - 2);
+  const maxIdx = Math.min(lastIdx, initialIdx + 2);
+
+  const [idx, setIdx] = useState(initialIdx);
+  const [dir, setDir] = useState(0);
+  const draggedRef = useRef(false);
+
+  const current = posts[idx];
+  const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(current?.media_url ?? "");
+
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    const swipe = info.offset.x + info.velocity.x * 0.1;
+    const THRESHOLD = 60;
+
+    if (Math.abs(info.offset.x) > 10) draggedRef.current = true;
+
+    if (swipe > THRESHOLD) {
+      // 右スワイプ = 新しい写真
+      if (idx >= maxIdx) {
+        onNavigate(circle.id);
+      } else {
+        setDir(1);
+        setIdx(idx + 1);
+      }
+    } else if (swipe < -THRESHOLD) {
+      // 左スワイプ = 昔の写真
+      if (idx <= minIdx) {
+        onNavigate(circle.id);
+      } else {
+        setDir(-1);
+        setIdx(idx - 1);
+      }
+    }
+  }
+
+  function handleClick() {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    onNavigate(circle.id);
+  }
+
+  const variants = {
+    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
+  };
+
   return (
     <div
-      onClick={() => onNavigate(post.circle_id)}
-      style={{ width: "100%", height: "80svh", scrollSnapAlign: "start", position: "relative", overflow: "hidden", cursor: "pointer" }}
+      style={{
+        width: "100%",
+        height: "80svh",
+        scrollSnapAlign: "start",
+        position: "relative",
+        overflow: "hidden",
+        cursor: "pointer",
+      }}
     >
-      {post.media_url ? (
-        isVideo ? (
-          <video
-            src={post.media_url}
-            autoPlay muted loop playsInline
-            preload="none"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.media_url}
-          alt={post.caption ?? ""}
-          loading={index === 0 ? "eager" : "lazy"}
-          decoding="async"
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
-        )
-      ) : (
-        <div
-          className={`bg-gradient-to-br ${gradient}`}
-          style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <span style={{ fontSize: 80, opacity: 0.12 }}>{post.circle.emoji}</span>
-        </div>
-      )}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.25}
+        onDragEnd={handleDragEnd}
+        onClick={handleClick}
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          inset: 0,
+          touchAction: "pan-y",
+        }}
+      >
+        <AnimatePresence initial={false} mode="wait" custom={dir}>
+          <motion.div
+            key={current?.id ?? "empty"}
+            custom={dir}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ x: { type: "tween", duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }, opacity: { duration: 0.2 } }}
+            style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
+          >
+            {current?.media_url ? (
+              isVideo ? (
+                <video
+                  src={current.media_url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="none"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={current.media_url}
+                  alt={current.caption ?? ""}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  draggable={false}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+                />
+              )
+            ) : (
+              <div
+                className={`bg-gradient-to-br ${gradient}`}
+                style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <span style={{ fontSize: 80, opacity: 0.12 }}>{circle.emoji}</span>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
 
-      {/* Top overlay — circle name */}
+      {/* Top overlay — circle name + progress dots */}
       <div
         style={{
-          position: "absolute", top: 0, left: 0, right: 0,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
           padding: "100px 16px 24px",
           background: "linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)",
+          pointerEvents: "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {post.circle.icon_url ? (
+          {circle.icon_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={post.circle.icon_url}
+              src={circle.icon_url}
               alt=""
               loading="lazy"
               style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(255,255,255,0.25)" }}
             />
           ) : (
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>
-              {post.circle.emoji}
+              {circle.emoji}
             </div>
           )}
           <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.02em" }}>
-            {post.circle.name}
+            {circle.name}
           </span>
-          {post.circle.category && (
+          {circle.category && (
             <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(167,139,250,0.25)", border: "1px solid rgba(167,139,250,0.4)", color: "#C4B5FD", letterSpacing: "0.04em" }}>
-              {post.circle.category}
+              {circle.category}
             </span>
           )}
         </div>
+
+        {/* Progress dots — show position within the swipe window */}
+        {maxIdx > minIdx && (
+          <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
+            {Array.from({ length: maxIdx - minIdx + 1 }).map((_, i) => {
+              const dotIdx = minIdx + i;
+              const active = dotIdx === idx;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    borderRadius: 1,
+                    background: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.22)",
+                    transition: "background 0.25s ease",
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Bottom overlay — caption */}
-      {post.caption && (
+      {current?.caption && (
         <div
           style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
             padding: "48px 16px 24px",
             background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
+            pointerEvents: "none",
           }}
         >
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 1.55 }}>{post.caption}</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>{post.month}月</p>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 1.55 }}>{current.caption}</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+            {current.year}年{current.month}月
+          </p>
         </div>
       )}
     </div>
