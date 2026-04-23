@@ -60,8 +60,8 @@ export default function Dial({
   const snapToIndex = useCallback(
     (currentRotation: number): number => {
       const normalized = ((currentRotation % 360) + 360) % 360;
-      const snapped = Math.round(normalized / snapAngle) * snapAngle;
-      return (((-snapped / snapAngle) % count) + count) % count;
+      const k = Math.round(normalized / snapAngle);
+      return ((-k % count) + count) % count;
     },
     [count, snapAngle]
   );
