@@ -353,23 +353,32 @@ function NicknameSetupModal({ onDone }: { onDone: () => void }) {
           backdropFilter: "blur(6px)",
         }}
       />
+      {/* Outer wrapper handles centering so framer-motion's animate transforms don't overwrite it */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 101,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          pointerEvents: "none",
+        }}
+      >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ type: "spring", damping: 22, stiffness: 280 }}
         style={{
-          position: "fixed",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          zIndex: 101,
           width: "min(92vw, 380px)",
           background: "#141416",
           border: "1px solid rgba(167,139,250,0.22)",
           borderRadius: 24,
           padding: "32px 24px 24px",
           boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(167,139,250,0.08)",
+          pointerEvents: "auto",
         }}
       >
         <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -445,6 +454,7 @@ function NicknameSetupModal({ onDone }: { onDone: () => void }) {
           {saving ? "保存中..." : "はじめる"}
         </motion.button>
       </motion.div>
+      </div>
     </>
   );
 }
