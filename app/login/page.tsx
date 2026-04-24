@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [resendedAt, setResendedAt] = useState<number | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   // On first mount, pre-fill last used email so returning users don't have to retype
@@ -141,13 +140,10 @@ export default function LoginPage() {
 
   async function handleResend() {
     if (resending) return;
-    // Simple client-side cooldown — 30s between resends
-    if (resendedAt && Date.now() - resendedAt < 30_000) return;
     setResending(true);
     setError("");
     try {
       await sendCode(email);
-      setResendedAt(Date.now());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(translateAuthError(msg));
@@ -364,7 +360,7 @@ export default function LoginPage() {
               <span style={{ color: "rgba(255,255,255,0.15)" }}>•</span>
               <button
                 onClick={handleResend}
-                disabled={resending || (resendedAt !== null && Date.now() - resendedAt < 30_000)}
+                disabled={resending}
                 style={{
                   color: resending ? "rgba(255,255,255,0.25)" : "rgba(196,181,253,0.75)",
                   background: "none",
