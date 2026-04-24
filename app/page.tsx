@@ -65,6 +65,9 @@ export default function Home() {
   const [dataLoading, setDataLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [myCircleIds, setMyCircleIds] = useState<Set<string>>(new Set());
+  const [favLimitToast, setFavLimitToast] = useState(false);
 
   // First-time welcome: prompt for nickname if not set
   useEffect(() => {
@@ -92,12 +95,50 @@ export default function Home() {
         } else {
           setFeed(buildMockFeed());
         }
+
+        if (user.id !== "dev-user") {
+          const { data: memberData } = await supabase
+            .from("circle_members")
+            .select("circle_id")
+            .eq("user_id", user.id);
+          if (memberData) {
+            setMyCircleIds(new Set(memberData.map((r) => r.circle_id)));
+          }
+        } else {
+          setMyCircleIds(new Set(MOCK_CIRCLES.map((c) => c.id)));
+        }
       } else {
         setFeed(buildMockFeed());
+        setMyCircleIds(new Set(MOCK_CIRCLES.map((c) => c.id)));
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const meta = (user.user_metadata ?? {}) as any;
+      setFavorites(Array.isArray(meta.favorites) ? meta.favorites : []);
       setDataLoading(false);
     })();
   }, [user]);
+
+  async function toggleFavorite(postId: string, circleId: string) {
+    if (!myCircleIds.has(circleId)) return;
+    const already = favorites.includes(postId);
+    let next: string[];
+    if (already) {
+      next = favorites.filter((id) => id !== postId);
+    } else {
+      if (favorites.length >= 6) {
+        setFavLimitToast(true);
+        setTimeout(() => setFavLimitToast(false), 2200);
+        return;
+      }
+      next = [...favorites, postId];
+    }
+    setFavorites(next);
+    if (supabase && user && user.id !== "dev-user") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentMeta = (user.user_metadata ?? {}) as any;
+      await supabase.auth.updateUser({ data: { ...currentMeta, favorites: next } });
+    }
+  }
 
   if (user === undefined) {
     return (
@@ -157,6 +198,9 @@ export default function Home() {
               posts={item.posts}
               index={i}
               onNavigate={(id) => router.push(`/circle/${id}`)}
+              canFavorite={myCircleIds.has(item.circle.id)}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
             />
           ))}
           <div style={{ height: "20svh", flexShrink: 0 }} />
@@ -200,6 +244,36 @@ export default function Home() {
       <AnimatePresence>
         {showNicknameModal && (
           <NicknameSetupModal onDone={() => setShowNicknameModal(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Favorite limit toast */}
+      <AnimatePresence>
+        {favLimitToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            style={{
+              position: "fixed",
+              bottom: 130,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 80,
+              padding: "10px 18px",
+              borderRadius: 12,
+              background: "rgba(20,20,22,0.95)",
+              border: "1px solid rgba(167,139,250,0.3)",
+              color: "rgba(196,181,253,0.9)",
+              fontSize: 12,
+              letterSpacing: "0.03em",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            お気に入りは6つまで。マイページで整理してね
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -406,11 +480,17 @@ function CircleCard({
   posts,
   index,
   onNavigate,
+  canFavorite,
+  favorites,
+  onToggleFavorite,
 }: {
   circle: Circle;
   posts: Post[];
   index: number;
   onNavigate: (id: string) => void;
+  canFavorite: boolean;
+  favorites: string[];
+  onToggleFavorite: (postId: string, circleId: string) => void;
 }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   const lastIdx = posts.length - 1;
@@ -612,7 +692,7 @@ function CircleCard({
             bottom: 0,
             left: 0,
             right: 0,
-            padding: "48px 16px 24px",
+            padding: "48px 72px 24px 16px",
             background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
             pointerEvents: "none",
           }}
@@ -622,6 +702,53 @@ function CircleCard({
             {current.year}年{current.month}月
           </p>
         </div>
+      )}
+
+      {/* Heart favorite button — only for members of this circle */}
+      {canFavorite && current && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(current.id, circle.id);
+          }}
+          aria-label={favorites.includes(current.id) ? "お気に入りを解除" : "お気に入りに追加"}
+          style={{
+            position: "absolute",
+            bottom: 24,
+            right: 16,
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            background: favorites.includes(current.id)
+              ? "rgba(248,113,113,0.22)"
+              : "rgba(0,0,0,0.5)",
+            border: favorites.includes(current.id)
+              ? "1px solid rgba(248,113,113,0.6)"
+              : "1px solid rgba(255,255,255,0.2)",
+            backdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+            zIndex: 5,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+          }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill={favorites.includes(current.id) ? "#F87171" : "none"}
+            stroke={favorites.includes(current.id) ? "#F87171" : "rgba(255,255,255,0.9)"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </motion.button>
       )}
     </div>
   );
