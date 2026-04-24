@@ -109,8 +109,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    if (code.length !== 6) {
-      setError("6桁のコードを入力してください");
+    if (code.length < 6) {
+      setError("コードを入力してください");
       return;
     }
 
@@ -252,7 +252,7 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.2)" }}>
-              メールに届いた6桁の数字を次の画面で入力します
+              メールに届いた認証コードを次の画面で入力します
             </p>
           </motion.div>
         ) : (
@@ -278,10 +278,10 @@ export default function LoginPage() {
                 className="text-sm font-semibold mb-1"
                 style={{ color: "var(--silver-bright)", letterSpacing: "0.03em" }}
               >
-                6桁のコードを入力
+                認証コードを入力
               </p>
               <p className="text-xs mb-5 leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {email} 宛に認証コードを送りました。メールの中の数字6桁をここに入れてください。
+                {email} 宛に認証コードを送りました。メールの中の数字をここに入れてください。
               </p>
 
               <form onSubmit={handleVerifyCode} className="flex flex-col gap-3">
@@ -289,22 +289,22 @@ export default function LoginPage() {
                   ref={codeInputRef}
                   type="text"
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="000000"
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="------"
                   required
                   autoComplete="one-time-code"
                   inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
+                  pattern="[0-9]{6,10}"
+                  maxLength={10}
                   className="w-full rounded-xl py-3 text-center outline-none"
                   style={{
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(167,139,250,0.3)",
                     color: "#C4B5FD",
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: 700,
-                    letterSpacing: "0.45em",
-                    paddingLeft: "0.45em",
+                    letterSpacing: "0.35em",
+                    paddingLeft: "0.35em",
                   }}
                 />
 
@@ -324,18 +324,18 @@ export default function LoginPage() {
 
                 <motion.button
                   type="submit"
-                  disabled={loading || code.length !== 6}
+                  disabled={loading || code.length < 6}
                   whileTap={{ scale: 0.96 }}
                   className="w-full rounded-xl py-3 text-sm font-medium"
                   style={{
-                    background: loading || code.length !== 6
+                    background: loading || code.length < 6
                       ? "rgba(255,255,255,0.05)"
                       : "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.10))",
-                    border: loading || code.length !== 6
+                    border: loading || code.length < 6
                       ? "1px solid rgba(255,255,255,0.1)"
                       : "1px solid rgba(167,139,250,0.38)",
-                    color: loading || code.length !== 6 ? "rgba(255,255,255,0.25)" : "#C4B5FD",
-                    cursor: loading || code.length !== 6 ? "not-allowed" : "pointer",
+                    color: loading || code.length < 6 ? "rgba(255,255,255,0.25)" : "#C4B5FD",
+                    cursor: loading || code.length < 6 ? "not-allowed" : "pointer",
                     letterSpacing: "0.05em",
                     transition: "all 0.3s ease",
                   }}
