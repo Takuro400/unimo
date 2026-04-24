@@ -210,19 +210,32 @@ export default function Home() {
             scrollbarWidth: "none",
           }}
         >
-          {feed.map((item, i) => (
-            <CircleCard
-              key={item.circle.id}
-              circle={item.circle}
-              posts={item.posts}
-              index={i}
-              onNavigate={(id) => router.push(`/circle/${id}`)}
-              canFavorite={myCircleIds.has(item.circle.id)}
-              favorites={favorites}
-              onToggleFavorite={toggleFavorite}
-              profiles={profiles}
-            />
-          ))}
+          {feed.map((item, i) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const meta = (user?.user_metadata ?? {}) as any;
+            const myProfile: PosterProfile | undefined = user
+              ? {
+                  user_id: user.id,
+                  nickname: meta.nickname ?? null,
+                  avatar_url: meta.avatar_url ?? null,
+                }
+              : undefined;
+            return (
+              <CircleCard
+                key={item.circle.id}
+                circle={item.circle}
+                posts={item.posts}
+                index={i}
+                onNavigate={(id) => router.push(`/circle/${id}`)}
+                canFavorite={myCircleIds.has(item.circle.id)}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                profiles={profiles}
+                currentUserId={user?.id}
+                currentUserProfile={myProfile}
+              />
+            );
+          })}
           <div style={{ height: "20svh", flexShrink: 0 }} />
         </div>
       )}
@@ -504,6 +517,8 @@ function CircleCard({
   favorites,
   onToggleFavorite,
   profiles,
+  currentUserId,
+  currentUserProfile,
 }: {
   circle: Circle;
   posts: Post[];
@@ -513,6 +528,8 @@ function CircleCard({
   favorites: string[];
   onToggleFavorite: (postId: string, circleId: string) => void;
   profiles: Record<string, PosterProfile>;
+  currentUserId: string | undefined;
+  currentUserProfile: PosterProfile | undefined;
 }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   const lastIdx = posts.length - 1;
@@ -726,13 +743,19 @@ function CircleCard({
         </div>
       )}
 
-      {/* Poster chip — bottom-right */}
-      {current && (
-        <PosterChip
-          profile={current.posted_by ? profiles[current.posted_by] : undefined}
-          posterEmail={undefined}
-        />
-      )}
+      {/* Poster chip — bottom-right.
+          If the post is by the current user, use their user_metadata directly
+          (so the user's own nickname shows even if the public profiles table
+          is missing or hasn't synced yet). */}
+      {current && (() => {
+        const isMine = !!currentUserId && current.posted_by === currentUserId;
+        const resolvedProfile = isMine
+          ? currentUserProfile
+          : current.posted_by
+          ? profiles[current.posted_by]
+          : undefined;
+        return <PosterChip profile={resolvedProfile} posterEmail={undefined} />;
+      })()}
 
       {/* Heart favorite button — top-right, only for members of this circle */}
       {canFavorite && current && (
