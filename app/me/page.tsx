@@ -386,10 +386,10 @@ function FavoritesOrbit({
   onAvatarTap: () => void;
   onRemoveFav: (postId: string) => void;
 }) {
-  const size = 300;
-  const centerAvatarSize = 96;
-  const slotSize = 62;
-  const radius = size / 2 - slotSize / 2 - 6;
+  const size = 360;
+  const centerAvatarSize = 128;
+  const slotSize = 78;
+  const radius = size / 2 - slotSize / 2 - 8;
 
   const [rotation, setRotation] = useState(0);
   const [isSnapping, setIsSnapping] = useState(false);
@@ -584,7 +584,7 @@ function FavoritesOrbit({
                 height: "100%",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 40,
+                fontSize: 52,
                 color: "#E9E0FF",
                 fontWeight: 600,
                 letterSpacing: "0.05em",
@@ -623,17 +623,17 @@ function FavoritesOrbit({
         <span
           style={{
             position: "absolute",
-            bottom: 0,
-            right: 0,
-            width: 24,
-            height: 24,
+            bottom: 2,
+            right: 2,
+            width: 30,
+            height: 30,
             borderRadius: "50%",
             background: "#A78BFA",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             border: "2px solid #0D0D0F",
-            fontSize: 11,
+            fontSize: 13,
             color: "#0D0D0F",
             pointerEvents: "none",
             lineHeight: 1,
