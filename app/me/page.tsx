@@ -62,8 +62,25 @@ export default function MePage() {
   const saveMeta = useCallback(
     async (next: ProfileMeta) => {
       setMeta(next);
-      if (supabase && user?.id !== "dev-user") {
+      if (supabase && user && user.id !== "dev-user") {
         await supabase.auth.updateUser({ data: next });
+        // Also mirror readable fields to the public profiles table so other users can see them.
+        // Graceful: if the table doesn't exist yet, the error is swallowed.
+        try {
+          await supabase.from("profiles").upsert(
+            {
+              user_id: user.id,
+              nickname: next.nickname ?? null,
+              avatar_url: next.avatar_url ?? null,
+              university: next.university ?? null,
+              faculty: next.faculty ?? null,
+              department: next.department ?? null,
+            },
+            { onConflict: "user_id" }
+          );
+        } catch {
+          // profiles table missing or RLS blocked — ignore
+        }
       }
     },
     [user]
