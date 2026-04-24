@@ -11,6 +11,8 @@ import BottomNav from "@/components/BottomNav";
 
 type CircleFeedItem = { circle: Circle; posts: Post[] };
 
+type PosterProfile = { user_id: string; nickname: string | null; avatar_url: string | null };
+
 const GRADIENTS = [
   "from-slate-700 to-slate-900",
   "from-violet-900 to-slate-900",
@@ -68,6 +70,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [myCircleIds, setMyCircleIds] = useState<Set<string>>(new Set());
   const [favLimitToast, setFavLimitToast] = useState(false);
+  const [profiles, setProfiles] = useState<Record<string, PosterProfile>>({});
 
   // First-time welcome: prompt for nickname if not set
   useEffect(() => {
@@ -92,6 +95,22 @@ export default function Home() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const enriched = (data as any[]).map((p) => ({ ...p, circle: p.circles }));
           setFeed(groupPostsByCircle(enriched));
+
+          // Fetch poster profiles for the displayed posts (graceful if table missing)
+          const posterIds = Array.from(
+            new Set(enriched.map((p) => p.posted_by).filter(Boolean) as string[])
+          );
+          if (posterIds.length > 0) {
+            const { data: profileData, error: profileErr } = await supabase
+              .from("profiles")
+              .select("user_id, nickname, avatar_url")
+              .in("user_id", posterIds);
+            if (!profileErr && profileData) {
+              const map: Record<string, PosterProfile> = {};
+              for (const p of profileData as PosterProfile[]) map[p.user_id] = p;
+              setProfiles(map);
+            }
+          }
         } else {
           setFeed(buildMockFeed());
         }
@@ -201,6 +220,7 @@ export default function Home() {
               canFavorite={myCircleIds.has(item.circle.id)}
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
+              profiles={profiles}
             />
           ))}
           <div style={{ height: "20svh", flexShrink: 0 }} />
@@ -483,6 +503,7 @@ function CircleCard({
   canFavorite,
   favorites,
   onToggleFavorite,
+  profiles,
 }: {
   circle: Circle;
   posts: Post[];
@@ -491,6 +512,7 @@ function CircleCard({
   canFavorite: boolean;
   favorites: string[];
   onToggleFavorite: (postId: string, circleId: string) => void;
+  profiles: Record<string, PosterProfile>;
 }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   const lastIdx = posts.length - 1;
@@ -684,7 +706,7 @@ function CircleCard({
         )}
       </div>
 
-      {/* Bottom overlay — caption */}
+      {/* Bottom overlay — caption (left side only; right side is reserved for poster chip) */}
       {current?.caption && (
         <div
           style={{
@@ -692,7 +714,7 @@ function CircleCard({
             bottom: 0,
             left: 0,
             right: 0,
-            padding: "48px 72px 24px 16px",
+            padding: "48px 140px 24px 16px",
             background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
             pointerEvents: "none",
           }}
@@ -704,7 +726,15 @@ function CircleCard({
         </div>
       )}
 
-      {/* Heart favorite button — only for members of this circle */}
+      {/* Poster chip — bottom-right */}
+      {current && (
+        <PosterChip
+          profile={current.posted_by ? profiles[current.posted_by] : undefined}
+          posterEmail={undefined}
+        />
+      )}
+
+      {/* Heart favorite button — top-right, only for members of this circle */}
       {canFavorite && current && (
         <motion.button
           whileTap={{ scale: 0.85 }}
@@ -715,10 +745,10 @@ function CircleCard({
           aria-label={favorites.includes(current.id) ? "お気に入りを解除" : "お気に入りに追加"}
           style={{
             position: "absolute",
-            bottom: 24,
+            top: 100,
             right: 16,
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             borderRadius: "50%",
             background: favorites.includes(current.id)
               ? "rgba(248,113,113,0.22)"
@@ -737,8 +767,8 @@ function CircleCard({
           }}
         >
           <svg
-            width="22"
-            height="22"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill={favorites.includes(current.id) ? "#F87171" : "none"}
             stroke={favorites.includes(current.id) ? "#F87171" : "rgba(255,255,255,0.9)"}
@@ -750,6 +780,87 @@ function CircleCard({
           </svg>
         </motion.button>
       )}
+    </div>
+  );
+}
+
+function PosterChip({
+  profile,
+  posterEmail,
+}: {
+  profile: PosterProfile | undefined;
+  posterEmail: string | undefined;
+}) {
+  const name = profile?.nickname?.trim() || posterEmail?.split("@")[0] || "名無し";
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 24,
+        right: 16,
+        zIndex: 4,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "4px 12px 4px 4px",
+        borderRadius: 999,
+        background: "rgba(0,0,0,0.55)",
+        border: "1px solid rgba(255,255,255,0.14)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+        maxWidth: 160,
+        pointerEvents: "none",
+      }}
+    >
+      {profile?.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={profile.avatar_url}
+          alt=""
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            objectFit: "cover",
+            flexShrink: 0,
+            border: "1px solid rgba(255,255,255,0.25)",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
+            border: "1px solid rgba(167,139,250,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            fontSize: 13,
+            color: "#E9E0FF",
+            fontWeight: 600,
+            letterSpacing: "0.02em",
+          }}
+        >
+          {initial}
+        </div>
+      )}
+      <span
+        style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.92)",
+          fontWeight: 500,
+          letterSpacing: "0.02em",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {name}
+      </span>
     </div>
   );
 }
