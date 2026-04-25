@@ -95,6 +95,43 @@ export default function CircleDetailPage() {
     }
   }
 
+  async function deletePost(post: Post) {
+    if (!user || post.posted_by !== user.id) return;
+    if (!window.confirm("この投稿を削除しますか?\n削除すると元に戻せません。")) return;
+
+    // Optimistic UI: remove from local state right away
+    setPosts((prev) => prev.filter((p) => p.id !== post.id));
+    // Also remove from favorites if present
+    if (favorites.includes(post.id)) {
+      const nextFavs = favorites.filter((id) => id !== post.id);
+      setFavorites(nextFavs);
+      if (supabase && user.id !== "dev-user") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currentMeta = (user.user_metadata ?? {}) as any;
+        await supabase.auth.updateUser({ data: { ...currentMeta, favorites: nextFavs } });
+      }
+    }
+
+    if (supabase && user.id !== "dev-user") {
+      // Remove DB row
+      const { error: delErr } = await supabase.from("posts").delete().eq("id", post.id);
+      if (delErr) {
+        console.error("post delete failed", delErr);
+        // Revert optimistic update
+        setPosts((prev) => [post, ...prev]);
+        window.alert("削除に失敗しました。もう一度お試しください。");
+        return;
+      }
+      // Best-effort: remove the media file from storage
+      const marker = "/storage/v1/object/public/posts/";
+      const idx = post.media_url?.indexOf(marker) ?? -1;
+      if (idx >= 0) {
+        const path = post.media_url.slice(idx + marker.length);
+        await supabase.storage.from("posts").remove([path]).catch(() => {});
+      }
+    }
+  }
+
   const monthPosts = useMemo(
     () => posts.filter((p) => p.month === selectedMonth),
     [posts, selectedMonth]
@@ -335,6 +372,8 @@ export default function CircleDetailPage() {
                     canFavorite={isMember}
                     favorited={favorites.includes(post.id)}
                     onToggleFavorite={() => toggleFavorite(post.id)}
+                    canDelete={!!user && post.posted_by === user.id}
+                    onDelete={() => deletePost(post)}
                   />
                 ))}
               </div>
@@ -562,12 +601,16 @@ function PostCard({
   canFavorite,
   favorited,
   onToggleFavorite,
+  canDelete,
+  onDelete,
 }: {
   post: Post;
   index: number;
   canFavorite: boolean;
   favorited: boolean;
   onToggleFavorite: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   return (
@@ -585,6 +628,49 @@ function PostCard({
         <div className={`bg-gradient-to-br ${gradient} flex items-center justify-center`} style={{ height: 140 }}>
           <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>
         </div>
+      )}
+      {canDelete && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="この投稿を削除"
+          style={{
+            position: "absolute",
+            top: 6,
+            left: 6,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(248,113,113,0.95)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          </svg>
+        </motion.button>
       )}
       {canFavorite && (
         <motion.button

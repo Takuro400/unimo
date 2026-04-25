@@ -159,6 +159,46 @@ export default function Home() {
     }
   }
 
+  async function deletePost(post: Post) {
+    if (!user || post.posted_by !== user.id) return;
+    if (!window.confirm("この投稿を削除しますか?\n削除すると元に戻せません。")) return;
+
+    // Snapshot for revert
+    const prevFeed = feed;
+
+    // Remove from feed (and drop circles that have no posts left)
+    setFeed((items) =>
+      items
+        .map((item) => ({ ...item, posts: item.posts.filter((p) => p.id !== post.id) }))
+        .filter((item) => item.posts.length > 0)
+    );
+    if (favorites.includes(post.id)) {
+      const nextFavs = favorites.filter((id) => id !== post.id);
+      setFavorites(nextFavs);
+      if (supabase && user.id !== "dev-user") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currentMeta = (user.user_metadata ?? {}) as any;
+        await supabase.auth.updateUser({ data: { ...currentMeta, favorites: nextFavs } });
+      }
+    }
+
+    if (supabase && user.id !== "dev-user") {
+      const { error: delErr } = await supabase.from("posts").delete().eq("id", post.id);
+      if (delErr) {
+        console.error("post delete failed", delErr);
+        setFeed(prevFeed);
+        window.alert("削除に失敗しました。もう一度お試しください。");
+        return;
+      }
+      const marker = "/storage/v1/object/public/posts/";
+      const idx = post.media_url?.indexOf(marker) ?? -1;
+      if (idx >= 0) {
+        const path = post.media_url.slice(idx + marker.length);
+        await supabase.storage.from("posts").remove([path]).catch(() => {});
+      }
+    }
+  }
+
   if (user === undefined) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
@@ -233,6 +273,7 @@ export default function Home() {
                 profiles={profiles}
                 currentUserId={user?.id}
                 currentUserProfile={myProfile}
+                onDeletePost={deletePost}
               />
             );
           })}
@@ -529,6 +570,7 @@ function CircleCard({
   profiles,
   currentUserId,
   currentUserProfile,
+  onDeletePost,
 }: {
   circle: Circle;
   posts: Post[];
@@ -540,6 +582,7 @@ function CircleCard({
   profiles: Record<string, PosterProfile>;
   currentUserId: string | undefined;
   currentUserProfile: PosterProfile | undefined;
+  onDeletePost: (post: Post) => void;
 }) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
   const lastIdx = posts.length - 1;
@@ -766,6 +809,53 @@ function CircleCard({
           : undefined;
         return <PosterChip profile={resolvedProfile} posterEmail={undefined} />;
       })()}
+
+      {/* Delete button — top-left, only for posts authored by the current user */}
+      {current && currentUserId && current.posted_by === currentUserId && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeletePost(current);
+          }}
+          aria-label="この投稿を削除"
+          style={{
+            position: "absolute",
+            top: 100,
+            left: 16,
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            backdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+            zIndex: 5,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(248,113,113,0.95)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          </svg>
+        </motion.button>
+      )}
 
       {/* Heart favorite button — top-right, only for members of this circle */}
       {canFavorite && current && (
