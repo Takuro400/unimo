@@ -2,11 +2,17 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import type { Circle, Post } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
+
+function getPostDay(post: Post): number {
+  const d = new Date(post.created_at);
+  return isNaN(d.getTime()) ? 1 : d.getDate();
+}
 
 type ProfileMeta = {
   nickname?: string;
@@ -21,6 +27,7 @@ const MAX_FAVS = 6;
 
 export default function MePage() {
   const user = useAuth();
+  const router = useRouter();
   const [meta, setMeta] = useState<ProfileMeta>({});
   const [favPosts, setFavPosts] = useState<Record<string, Post>>({});
   const [myCircles, setMyCircles] = useState<Circle[]>([]);
@@ -125,6 +132,13 @@ export default function MePage() {
     });
   }
 
+  function navigateToPost(post: Post) {
+    const day = getPostDay(post);
+    router.push(
+      `/circle/${post.circle_id}?month=${post.month}&day=${day}&view=posts`
+    );
+  }
+
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
     window.location.href = "/login";
@@ -166,6 +180,7 @@ export default function MePage() {
           uploading={uploadingAvatar}
           onAvatarTap={() => fileInputRef.current?.click()}
           onRemoveFav={removeFavorite}
+          onNavigateFav={navigateToPost}
         />
 
         <input
@@ -395,6 +410,7 @@ function FavoritesOrbit({
   uploading,
   onAvatarTap,
   onRemoveFav,
+  onNavigateFav,
 }: {
   avatarUrl?: string;
   initial: string;
@@ -402,6 +418,7 @@ function FavoritesOrbit({
   uploading: boolean;
   onAvatarTap: () => void;
   onRemoveFav: (postId: string) => void;
+  onNavigateFav: (post: Post) => void;
 }) {
   const size = 360;
   const centerAvatarSize = 128;
@@ -539,7 +556,11 @@ function FavoritesOrbit({
                   transition: isSnapping ? "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)" : "none",
                 }}
               >
-                <FavoriteSlot post={post} onRemove={post ? () => onRemoveFav(post.id) : undefined} />
+                <FavoriteSlot
+                  post={post}
+                  onRemove={post ? () => onRemoveFav(post.id) : undefined}
+                  onNavigate={onNavigateFav}
+                />
               </div>
             </div>
           );
@@ -666,11 +687,12 @@ function FavoritesOrbit({
 function FavoriteSlot({
   post,
   onRemove,
+  onNavigate,
 }: {
   post: Post | null;
   onRemove?: () => void;
+  onNavigate?: (post: Post) => void;
 }) {
-  const [showRemove, setShowRemove] = useState(false);
   if (!post) {
     return (
       <div
@@ -696,70 +718,88 @@ function FavoriteSlot({
         width: "100%",
         height: "100%",
         position: "relative",
-        overflow: "hidden",
-        border: "1.5px solid rgba(167,139,250,0.28)",
-        background: "rgba(255,255,255,0.04)",
-        boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-        cursor: "pointer",
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowRemove((v) => !v);
+        overflow: "visible", // allow ✕ to overflow slightly
+        cursor: onNavigate ? "pointer" : "default",
       }}
     >
-      {post.media_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.media_url}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
-        />
-      ) : (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "linear-gradient(135deg, rgba(167,139,250,0.16), rgba(167,139,250,0.05))",
-          }}
-        >
-          <span style={{ fontSize: 16, opacity: 0.4 }}>🖼️</span>
-        </div>
-      )}
-      <AnimatePresence>
-        {showRemove && onRemove && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.7 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-              setShowRemove(false);
-            }}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onNavigate?.(post);
+        }}
+        aria-label={`${post.caption ?? "投稿"}に移動`}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          padding: 0,
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "1.5px solid rgba(167,139,250,0.28)",
+          background: "rgba(255,255,255,0.04)",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+          cursor: onNavigate ? "pointer" : "default",
+        }}
+      >
+        {post.media_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={post.media_url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", pointerEvents: "none" }}
+          />
+        ) : (
+          <div
             style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.6)",
-              border: "none",
-              cursor: "pointer",
+              width: "100%",
+              height: "100%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fff",
-              fontSize: 18,
-              backdropFilter: "blur(4px)",
+              background: "linear-gradient(135deg, rgba(167,139,250,0.16), rgba(167,139,250,0.05))",
             }}
           >
-            ✕
-          </motion.button>
+            <span style={{ fontSize: 16, opacity: 0.4 }}>🖼️</span>
+          </div>
         )}
-      </AnimatePresence>
+      </button>
+      {/* Remove (✕) — small chip in the corner, on top of the photo button */}
+      {onRemove && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          aria-label="お気に入りから外す"
+          style={{
+            position: "absolute",
+            top: -4,
+            right: -4,
+            width: 22,
+            height: 22,
+            borderRadius: "50%",
+            background: "rgba(13,13,15,0.92)",
+            border: "1.5px solid rgba(248,113,113,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(248,113,113,0.95)",
+            fontSize: 12,
+            lineHeight: 1,
+            cursor: "pointer",
+            padding: 0,
+            zIndex: 2,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+          }}
+        >
+          ✕
+        </motion.button>
+      )}
     </div>
   );
 }

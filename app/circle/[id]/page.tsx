@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
@@ -34,7 +34,22 @@ export default function CircleDetailPage() {
   const user = useAuth();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+
+  // Deep-link from /me favorites or elsewhere: ?month=4&day=15&view=posts
+  const initialMonth = (() => {
+    const v = Number(searchParams.get("month"));
+    return Number.isFinite(v) && v >= 1 && v <= 12 ? v : new Date().getMonth() + 1;
+  })();
+  const initialDay = (() => {
+    const v = Number(searchParams.get("day"));
+    return Number.isFinite(v) && v >= 1 && v <= 31 ? v : 1;
+  })();
+  const initialView = (() => {
+    const v = searchParams.get("view");
+    return v === "day" || v === "posts" ? (v as View) : "month";
+  })();
 
   const [circle, setCircle] = useState<Circle | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -43,9 +58,9 @@ export default function CircleDetailPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favLimitToast, setFavLimitToast] = useState(false);
 
-  const [view, setView] = useState<View>("month");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState<number>(1);
+  const [view, setView] = useState<View>(initialView);
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
+  const [selectedDay, setSelectedDay] = useState<number>(initialDay);
 
   useEffect(() => {
     if (!user) return;
