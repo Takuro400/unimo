@@ -20,8 +20,14 @@ export default function PostPage() {
   const [isMember, setIsMember] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  const currentMonth = new Date().getMonth() + 1;
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentDay = now.getDate();
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
   const [month, setMonth] = useState(currentMonth);
+  const [day, setDay] = useState(currentDay);
+  const [time, setTime] = useState(currentTime);
   const [caption, setCaption] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -72,14 +78,21 @@ export default function PostPage() {
         if (uploadError) throw uploadError;
 
         const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
+        const year = now.getFullYear();
+        const maxDay = new Date(year, month, 0).getDate();
+        const clampedDay = Math.min(day, maxDay);
+        const [hh, mm] = time.split(":").map(Number);
+        const postedAt = new Date(year, month - 1, clampedDay, hh, mm, 0);
+
         const { error: insertError } = await supabase.from("posts").insert({
           circle_id: id,
           posted_by: user.id,
           month,
-          year: new Date().getFullYear(),
+          year,
           media_url: urlData.publicUrl,
           media_type: file.type.startsWith("video") ? "video" : "image",
           caption: caption.trim() || null,
+          created_at: postedAt.toISOString(),
         });
         if (insertError) throw insertError;
       }
@@ -177,6 +190,47 @@ export default function PostPage() {
                       {m}
                     </motion.button>
                   ))}
+                </div>
+              </div>
+
+              {/* Day & Time */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>日</p>
+                  <input
+                    type="number"
+                    min={1}
+                    max={new Date(new Date().getFullYear(), month, 0).getDate()}
+                    value={day}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      const max = new Date(new Date().getFullYear(), month, 0).getDate();
+                      setDay(Math.max(1, Math.min(v, max)));
+                    }}
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none text-center"
+                    style={{
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      color: "var(--silver-bright)",
+                      appearance: "none",
+                      MozAppearance: "textfield",
+                    }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>時間</p>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                    style={{
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      color: "var(--silver-bright)",
+                      colorScheme: "dark",
+                    }}
+                  />
                 </div>
               </div>
 

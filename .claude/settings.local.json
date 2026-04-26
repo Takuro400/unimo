@@ -1,21 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\takur\\\\OneDrive\\\\ドキュメント\\\\Desktop\\\\UniMo\" -Recurse -File | Where-Object { $_.FullName -notmatch \"node_modules|\\\\.git\" } | Select-Object FullName)",
-      "PowerShell(New-Item -ItemType Directory -Path \"C:\\\\Users\\\\takur\\\\OneDrive\\\\�h�L�������g\\\\Desktop\\\\UniMo\\\\lib\" -Force)",
-      "PowerShell(New-Item -ItemType Directory -Path \"C:\\\\Users\\\\takur\\\\OneDrive\\\\�h�L�������g\\\\Desktop\\\\UniMo\\\\app\\\\login\" -Force)",
-      "PowerShell(New-Item -ItemType Directory -Path \"C:\\\\Users\\\\takur\\\\OneDrive\\\\�h�L�������g\\\\Desktop\\\\UniMo\\\\app\\\\circle\" -Force)",
-      "mcp__Claude_Preview__preview_start",
-      "PowerShell(New-Item -ItemType Directory -Path \"C:\\\\Users\\\\takur\\\\OneDrive\\\\�h�L�������g\\\\Desktop\\\\UniMo\\\\app\\\\circle\\\\new\" -Force)",
-      "Bash(python3 -c \"import sys,json; logs=json.load\\(sys.stdin\\); errors=[l for l in logs if 'error' in l.get\\('type',''\\).lower\\(\\) or 'Error' in l.get\\('text',''\\)]; print\\('\\\\n'.join\\(l['text'][:200] for l in errors[-20:]\\)\\)\")",
-      "Bash(powershell -Command \"Get-Content 'C:\\\\Users\\\\takur\\\\.claude\\\\projects\\\\C--Users-takur-OneDrive--------Desktop-UniMo\\\\241c4a4e-6f98-4b09-ac18-0370c20cad7a\\\\tool-results\\\\mcp-Claude_Preview-preview_console_logs-1776878272841.txt' | Select-String -Pattern 'Error|TypeError|Cannot|Unhandled' | Select-Object -First 15\")",
-      "Bash(npm run *)",
+      "Bash(echo \".claude/\")",
+      "Bash(git rm *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)",
-      "Bash(git rm *)",
       "Bash(git pull *)",
-      "Bash(git stash *)"
+      "Bash(git checkout *)",
+      "Bash(npm run *)",
+      "Bash(git push *)"
     ]
   }
 }
