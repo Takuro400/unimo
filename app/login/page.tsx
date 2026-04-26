@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { isAllowedEmail, ALLOWED_DOMAINS_LABEL } from "@/lib/email-domains";
 
 type Step = "input" | "code";
 
@@ -46,8 +47,6 @@ export default function LoginPage() {
     };
   }, [router]);
 
-  const isKyutechEmail = (e: string) => e.endsWith("@mail.kyutech.jp");
-
   function translateAuthError(raw: string): string {
     const m = raw.toLowerCase();
     if (m.includes("rate limit") || m.includes("too many") || m.includes("429")) {
@@ -83,8 +82,8 @@ export default function LoginPage() {
     setError("");
 
     const trimmed = email.trim();
-    if (!isKyutechEmail(trimmed)) {
-      setError("@mail.kyutech.jp のメールアドレスのみ登録できます");
+    if (!isAllowedEmail(trimmed)) {
+      setError(`${ALLOWED_DOMAINS_LABEL} のメールアドレスのみ登録できます`);
       return;
     }
 
@@ -166,7 +165,7 @@ export default function LoginPage() {
       >
         <h1 className="text-4xl font-bold tracking-widest silver-text mb-2">UniMo</h1>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em" }}>
-          九工大サークル活動の記録
+          サークル活動の記録
         </p>
       </motion.div>
 
@@ -188,10 +187,10 @@ export default function LoginPage() {
                 className="text-sm font-medium mb-1"
                 style={{ color: "var(--silver-bright)", letterSpacing: "0.03em" }}
               >
-                九工大メールでログイン
+                大学メールでログイン
               </p>
               <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
-                @mail.kyutech.jp のアドレスが必要です
+                @mail.kyutech.jp / @seinan-jo.ac.jp のアドレスが必要です
               </p>
 
               <form onSubmit={handleSubmitEmail} className="flex flex-col gap-3">

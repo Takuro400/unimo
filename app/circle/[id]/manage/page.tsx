@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOCK_CIRCLES } from "@/lib/mock-data";
+import { isAllowedEmail, ALLOWED_DOMAINS_LABEL } from "@/lib/email-domains";
 
 const MOCK_MEMBERS = [
   { id: "u1", email: "s123456a@mail.kyutech.ac.jp", role: "admin" as const },
@@ -25,8 +26,8 @@ export default function ManagePage() {
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!newEmail.endsWith("@mail.kyutech.ac.jp")) {
-      setError("@mail.kyutech.ac.jp のアドレスのみ追加できます");
+    if (!isAllowedEmail(newEmail)) {
+      setError(`${ALLOWED_DOMAINS_LABEL} のアドレスのみ追加できます`);
       return;
     }
     if (members.some((m) => m.email === newEmail)) {
