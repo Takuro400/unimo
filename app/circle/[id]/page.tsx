@@ -214,7 +214,13 @@ export default function CircleDetailPage() {
                 className="grid grid-cols-2 gap-2"
               >
                 {monthPosts.map((post, i) => (
-                  <PostCard key={post.id} post={post} index={i} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    index={i}
+                    userId={user?.id ?? null}
+                    onDelete={(deletedId) => setPosts((prev) => prev.filter((p) => p.id !== deletedId))}
+                  />
                 ))}
               </motion.div>
             )}
@@ -245,14 +251,39 @@ export default function CircleDetailPage() {
   );
 }
 
-function PostCard({ post, index }: { post: Post; index: number }) {
+function PostCard({
+  post, index, userId, onDelete,
+}: {
+  post: Post;
+  index: number;
+  userId: string | null;
+  onDelete: (id: string) => void;
+}) {
   const gradient = GRADIENTS[index % GRADIENTS.length];
+  const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isOwn = !!userId && post.posted_by === userId;
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      if (supabase) {
+        await supabase.from("posts").delete().eq("id", post.id);
+      }
+      onDelete(post.id);
+    } catch {
+      setDeleting(false);
+      setConfirm(false);
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
       className="glass rounded-xl overflow-hidden"
+      style={{ position: "relative" }}
     >
       {post.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -262,6 +293,58 @@ function PostCard({ post, index }: { post: Post; index: number }) {
           <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>
         </div>
       )}
+
+      {/* 削除ボタン — 自分の投稿のみ */}
+      {isOwn && (
+        <div style={{ position: "absolute", top: 6, right: 6 }}>
+          {confirm ? (
+            <div style={{ display: "flex", gap: 4 }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  fontSize: 10, padding: "3px 7px", borderRadius: 6,
+                  background: "rgba(248,113,113,0.85)", border: "none",
+                  color: "#fff", cursor: "pointer", fontWeight: 600,
+                }}
+              >
+                {deleting ? "…" : "削除"}
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setConfirm(false)}
+                style={{
+                  fontSize: 10, padding: "3px 7px", borderRadius: 6,
+                  background: "rgba(0,0,0,0.55)", border: "none",
+                  color: "rgba(255,255,255,0.7)", cursor: "pointer",
+                }}
+              >
+                戻る
+              </motion.button>
+            </div>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              onClick={() => setConfirm(true)}
+              style={{
+                width: 26, height: 26, borderRadius: 6,
+                background: "rgba(0,0,0,0.5)", border: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </motion.button>
+          )}
+        </div>
+      )}
+
       {post.caption && (
         <div className="px-2.5 py-2">
           <p
