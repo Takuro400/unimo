@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, PanInfo, useMotionValue, animate } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/lib/supabase";
 import { MOCK_CIRCLES, MOCK_POSTS } from "@/lib/mock-data";
 import type { Circle, Post } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import BottomNav from "@/components/BottomNav";
 
-type FeedPost = Post & { circle: Circle };
+type CircleFeedItem = { circle: Circle; posts: Post[] };
+
+type PosterProfile = { user_id: string; nickname: string | null; avatar_url: string | null };
 
 const GRADIENTS = [
   "from-slate-700 to-slate-900",
@@ -21,21 +24,62 @@ const GRADIENTS = [
   "from-slate-600 to-zinc-900",
 ];
 
-function buildMockFeed(): FeedPost[] {
+function groupPostsByCircle(
+  posts: (Post & { circle: Circle })[]
+): CircleFeedItem[] {
+  const byCircle = new Map<string, CircleFeedItem>();
+  for (const p of posts) {
+    if (!p.circle) continue;
+    let entry = byCircle.get(p.circle_id);
+    if (!entry) {
+      entry = { circle: p.circle, posts: [] };
+      byCircle.set(p.circle_id, entry);
+    }
+    entry.posts.push(p);
+  }
+  const items = Array.from(byCircle.values());
+  for (const item of items) {
+    item.posts.sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+  }
+  items.sort((a, b) => {
+    const la = a.posts[a.posts.length - 1]?.created_at ?? "";
+    const lb = b.posts[b.posts.length - 1]?.created_at ?? "";
+    return new Date(lb).getTime() - new Date(la).getTime();
+  });
+  return items;
+}
+
+function buildMockFeed(): CircleFeedItem[] {
   const circleMap = Object.fromEntries(MOCK_CIRCLES.map((c) => [c.id, c]));
-  return Object.values(MOCK_POSTS)
+  const enriched = Object.values(MOCK_POSTS)
     .flat()
     .filter((p) => circleMap[p.circle_id])
-    .map((p) => ({ ...p, circle: circleMap[p.circle_id] }))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    .map((p) => ({ ...p, circle: circleMap[p.circle_id] }));
+  return groupPostsByCircle(enriched);
 }
 
 export default function Home() {
   const user = useAuth();
   const router = useRouter();
-  const [feed, setFeed] = useState<FeedPost[]>([]);
+  const [feed, setFeed] = useState<CircleFeedItem[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [myCircleIds, setMyCircleIds] = useState<Set<string>>(new Set());
+  const [favLimitToast, setFavLimitToast] = useState(false);
+  const [profiles, setProfiles] = useState<Record<string, PosterProfile>>({});
+
+  // First-time welcome: prompt for nickname if not set
+  useEffect(() => {
+    if (!user) return;
+    if (user.id === "dev-user") return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = (user.user_metadata ?? {}) as any;
+    if (!meta.nickname?.trim()) setShowNicknameModal(true);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -45,20 +89,115 @@ export default function Home() {
           .from("posts")
           .select("*, circles(*)")
           .order("created_at", { ascending: false })
-          .limit(30);
+          .limit(150);
 
         if (data?.length) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          setFeed(data.map((p: any) => ({ ...p, circle: p.circles })));
+          const enriched = (data as any[]).map((p) => ({ ...p, circle: p.circles }));
+          setFeed(groupPostsByCircle(enriched));
+
+          // Fetch poster profiles for the displayed posts (graceful if table missing)
+          const posterIds = Array.from(
+            new Set(enriched.map((p) => p.posted_by).filter(Boolean) as string[])
+          );
+          if (posterIds.length > 0) {
+            const { data: profileData, error: profileErr } = await supabase
+              .from("profiles")
+              .select("user_id, nickname, avatar_url")
+              .in("user_id", posterIds);
+            if (!profileErr && profileData) {
+              const map: Record<string, PosterProfile> = {};
+              for (const p of profileData as PosterProfile[]) map[p.user_id] = p;
+              setProfiles(map);
+            }
+          }
         } else {
           setFeed(buildMockFeed());
         }
+
+        if (user.id !== "dev-user") {
+          const { data: memberData } = await supabase
+            .from("circle_members")
+            .select("circle_id")
+            .eq("user_id", user.id);
+          if (memberData) {
+            setMyCircleIds(new Set(memberData.map((r) => r.circle_id)));
+          }
+        } else {
+          setMyCircleIds(new Set(MOCK_CIRCLES.map((c) => c.id)));
+        }
       } else {
         setFeed(buildMockFeed());
+        setMyCircleIds(new Set(MOCK_CIRCLES.map((c) => c.id)));
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const meta = (user.user_metadata ?? {}) as any;
+      setFavorites(Array.isArray(meta.favorites) ? meta.favorites : []);
       setDataLoading(false);
     })();
   }, [user]);
+
+  async function toggleFavorite(postId: string, circleId: string) {
+    if (!myCircleIds.has(circleId)) return;
+    const already = favorites.includes(postId);
+    let next: string[];
+    if (already) {
+      next = favorites.filter((id) => id !== postId);
+    } else {
+      if (favorites.length >= 6) {
+        setFavLimitToast(true);
+        setTimeout(() => setFavLimitToast(false), 2200);
+        return;
+      }
+      next = [...favorites, postId];
+    }
+    setFavorites(next);
+    if (supabase && user && user.id !== "dev-user") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentMeta = (user.user_metadata ?? {}) as any;
+      await supabase.auth.updateUser({ data: { ...currentMeta, favorites: next } });
+    }
+  }
+
+  async function deletePost(post: Post) {
+    if (!user || post.posted_by !== user.id) return;
+    if (!window.confirm("この投稿を削除しますか?\n削除すると元に戻せません。")) return;
+
+    // Snapshot for revert
+    const prevFeed = feed;
+
+    // Remove from feed (and drop circles that have no posts left)
+    setFeed((items) =>
+      items
+        .map((item) => ({ ...item, posts: item.posts.filter((p) => p.id !== post.id) }))
+        .filter((item) => item.posts.length > 0)
+    );
+    if (favorites.includes(post.id)) {
+      const nextFavs = favorites.filter((id) => id !== post.id);
+      setFavorites(nextFavs);
+      if (supabase && user.id !== "dev-user") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const currentMeta = (user.user_metadata ?? {}) as any;
+        await supabase.auth.updateUser({ data: { ...currentMeta, favorites: nextFavs } });
+      }
+    }
+
+    if (supabase && user.id !== "dev-user") {
+      const { error: delErr } = await supabase.from("posts").delete().eq("id", post.id);
+      if (delErr) {
+        console.error("post delete failed", delErr);
+        setFeed(prevFeed);
+        window.alert("削除に失敗しました。もう一度お試しください。");
+        return;
+      }
+      const marker = "/storage/v1/object/public/posts/";
+      const idx = post.media_url?.indexOf(marker) ?? -1;
+      if (idx >= 0) {
+        const path = post.media_url.slice(idx + marker.length);
+        await supabase.storage.from("posts").remove([path]).catch(() => {});
+      }
+    }
+  }
 
   if (user === undefined) {
     return (
@@ -111,15 +250,39 @@ export default function Home() {
             scrollbarWidth: "none",
           }}
         >
-          {feed.map((post, i) => (
-            <FeedCard key={post.id} post={post} index={i} onNavigate={(id) => router.push(`/circle/${id}`)} />
-          ))}
+          {feed.map((item, i) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const meta = (user?.user_metadata ?? {}) as any;
+            const myProfile: PosterProfile | undefined = user
+              ? {
+                  user_id: user.id,
+                  nickname: meta.nickname ?? null,
+                  avatar_url: meta.avatar_url ?? null,
+                }
+              : undefined;
+            return (
+              <CircleCard
+                key={item.circle.id}
+                circle={item.circle}
+                posts={item.posts}
+                index={i}
+                onNavigate={(id) => router.push(`/circle/${id}`)}
+                canFavorite={myCircleIds.has(item.circle.id)}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                profiles={profiles}
+                currentUserId={user?.id}
+                currentUserProfile={myProfile}
+                onDeletePost={deletePost}
+              />
+            );
+          })}
           <div style={{ height: "20svh", flexShrink: 0 }} />
         </div>
       )}
 
-      {/* 参加する FAB */}
-      <div style={{ position: "fixed", bottom: 32, right: 20, zIndex: 50 }}>
+      {/* 参加する FAB — sits above the bottom nav */}
+      <div style={{ position: "fixed", bottom: 116, right: 20, zIndex: 55 }}>
         <motion.div
           whileTap={{ scale: 0.94 }}
           onClick={() => setShowJoinModal(true)}
@@ -135,6 +298,8 @@ export default function Home() {
         </motion.div>
       </div>
 
+      <BottomNav />
+
       {/* Join modal */}
       <AnimatePresence>
         {showJoinModal && (
@@ -148,91 +313,677 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+
+      {/* First-time nickname setup */}
+      <AnimatePresence>
+        {showNicknameModal && (
+          <NicknameSetupModal onDone={() => setShowNicknameModal(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Favorite limit toast */}
+      <AnimatePresence>
+        {favLimitToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            style={{
+              position: "fixed",
+              bottom: 130,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 80,
+              padding: "10px 18px",
+              borderRadius: 12,
+              background: "rgba(20,20,22,0.95)",
+              border: "1px solid rgba(167,139,250,0.3)",
+              color: "rgba(196,181,253,0.9)",
+              fontSize: 12,
+              letterSpacing: "0.03em",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            お気に入りは6つまで。マイページで整理してね
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function FeedCard({ post, index, onNavigate }: { post: FeedPost; index: number; onNavigate: (id: string) => void }) {
-  const gradient = GRADIENTS[index % GRADIENTS.length];
+function NicknameSetupModal({ onDone }: { onDone: () => void }) {
+  const [nickname, setNickname] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSave() {
+    const v = nickname.trim();
+    if (!v) {
+      setError("ニックネームを入力してください");
+      return;
+    }
+    setError("");
+    setSaving(true);
+    try {
+      if (supabase) {
+        const { error: e } = await supabase.auth.updateUser({ data: { nickname: v } });
+        if (e) throw e;
+      }
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存に失敗しました");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.7)",
+          zIndex: 100,
+          backdropFilter: "blur(6px)",
+        }}
+      />
+      {/* Outer wrapper handles centering so framer-motion's animate transforms don't overwrite it */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 101,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          pointerEvents: "none",
+        }}
+      >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{ type: "spring", damping: 22, stiffness: 280 }}
+        style={{
+          width: "min(92vw, 380px)",
+          background: "#141416",
+          border: "1px solid rgba(167,139,250,0.22)",
+          borderRadius: 24,
+          padding: "32px 24px 24px",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(167,139,250,0.08)",
+          pointerEvents: "auto",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              margin: "0 auto 14px",
+              background: "linear-gradient(135deg, rgba(167,139,250,0.3), rgba(167,139,250,0.1))",
+              border: "1px solid rgba(167,139,250,0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 26,
+            }}
+          >
+            ✨
+          </div>
+          <p className="text-base font-semibold silver-text" style={{ letterSpacing: "0.05em" }}>
+            ニックネームを決めよう
+          </p>
+          <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
+            アプリ内で表示される名前です。<br />
+            あとからマイページで変えられます。
+          </p>
+        </div>
+        <input
+          autoFocus
+          type="text"
+          maxLength={20}
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="例: たくろう"
+          className="w-full rounded-xl px-4 py-3"
+          style={{
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#E0E0E8",
+            fontSize: 15,
+            outline: "none",
+            textAlign: "center",
+            letterSpacing: "0.05em",
+          }}
+        />
+        {error && (
+          <p className="text-xs mt-2 text-center" style={{ color: "rgba(248,113,113,0.85)" }}>
+            {error}
+          </p>
+        )}
+        <motion.button
+          whileTap={saving ? undefined : { scale: 0.97 }}
+          onClick={saving ? undefined : handleSave}
+          disabled={saving || !nickname.trim()}
+          className="mt-4 w-full rounded-xl py-3"
+          style={{
+            background:
+              saving || !nickname.trim()
+                ? "rgba(255,255,255,0.04)"
+                : "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
+            border:
+              saving || !nickname.trim()
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "1px solid rgba(167,139,250,0.38)",
+            color: saving || !nickname.trim() ? "rgba(255,255,255,0.3)" : "#C4B5FD",
+            fontSize: 13,
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            cursor: saving || !nickname.trim() ? "not-allowed" : "pointer",
+            transition: "all 0.25s ease",
+          }}
+        >
+          {saving ? "保存中..." : "はじめる"}
+        </motion.button>
+      </motion.div>
+      </div>
+    </>
+  );
+}
+
+function PhotoLayer({
+  post,
+  circleEmoji,
+  gradient,
+  leftPercent,
+  eager,
+}: {
+  post: Post;
+  circleEmoji: string;
+  gradient: string;
+  leftPercent: number;
+  eager?: boolean;
+}) {
   const isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(post.media_url ?? "");
   return (
     <div
-      onClick={() => onNavigate(post.circle_id)}
-      style={{ width: "100%", height: "80svh", scrollSnapAlign: "start", position: "relative", overflow: "hidden", cursor: "pointer" }}
+      style={{
+        position: "absolute",
+        top: 0,
+        left: `${leftPercent}%`,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
     >
       {post.media_url ? (
         isVideo ? (
           <video
             src={post.media_url}
-            autoPlay muted loop playsInline
+            autoPlay
+            muted
+            loop
+            playsInline
             preload="none"
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           />
         ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={post.media_url}
-          alt={post.caption ?? ""}
-          loading={index === 0 ? "eager" : "lazy"}
-          decoding="async"
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={post.media_url}
+            alt={post.caption ?? ""}
+            loading={eager ? "eager" : "lazy"}
+            decoding="async"
+            draggable={false}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
         )
       ) : (
         <div
           className={`bg-gradient-to-br ${gradient}`}
           style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <span style={{ fontSize: 80, opacity: 0.12 }}>{post.circle.emoji}</span>
+          <span style={{ fontSize: 80, opacity: 0.12 }}>{circleEmoji}</span>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Top overlay — circle name */}
+function CircleCard({
+  circle,
+  posts,
+  index,
+  onNavigate,
+  canFavorite,
+  favorites,
+  onToggleFavorite,
+  profiles,
+  currentUserId,
+  currentUserProfile,
+  onDeletePost,
+}: {
+  circle: Circle;
+  posts: Post[];
+  index: number;
+  onNavigate: (id: string) => void;
+  canFavorite: boolean;
+  favorites: string[];
+  onToggleFavorite: (postId: string, circleId: string) => void;
+  profiles: Record<string, PosterProfile>;
+  currentUserId: string | undefined;
+  currentUserProfile: PosterProfile | undefined;
+  onDeletePost: (post: Post) => void;
+}) {
+  const gradient = GRADIENTS[index % GRADIENTS.length];
+  const lastIdx = posts.length - 1;
+  const initialIdx = Math.max(0, lastIdx - 2);
+  const minIdx = Math.max(0, initialIdx - 2);
+  const maxIdx = Math.min(lastIdx, initialIdx + 2);
+
+  const [idx, setIdx] = useState(initialIdx);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const draggedRef = useRef(false);
+  const animatingRef = useRef(false);
+
+  const current = posts[idx];
+  // Right swipe = newer (idx + 1); it needs to appear from the left, so place at leftPercent: -100
+  const newerPost = idx + 1 <= lastIdx ? posts[idx + 1] : null;
+  // Left swipe = older (idx - 1); appear from the right, leftPercent: +100
+  const olderPost = idx - 1 >= 0 ? posts[idx - 1] : null;
+
+  function getWidth() {
+    return containerRef.current?.offsetWidth ?? (typeof window !== "undefined" ? window.innerWidth : 375);
+  }
+
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    if (animatingRef.current) return;
+    if (Math.abs(info.offset.x) > 8) draggedRef.current = true;
+
+    const w = getWidth();
+    const threshold = Math.min(80, w * 0.2);
+    const swipe = info.offset.x + info.velocity.x * 0.15;
+
+    const springBack = () =>
+      animate(x, 0, { type: "spring", stiffness: 500, damping: 40 });
+
+    if (swipe > threshold) {
+      // 右スワイプ = 新しい写真
+      if (idx >= maxIdx) {
+        springBack();
+        onNavigate(circle.id);
+        return;
+      }
+      animatingRef.current = true;
+      animate(x, w, {
+        duration: 0.28,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        onComplete: () => {
+          setIdx((i) => i + 1);
+          x.set(0);
+          animatingRef.current = false;
+        },
+      });
+    } else if (swipe < -threshold) {
+      // 左スワイプ = 昔の写真
+      if (idx <= minIdx) {
+        springBack();
+        onNavigate(circle.id);
+        return;
+      }
+      animatingRef.current = true;
+      animate(x, -w, {
+        duration: 0.28,
+        ease: [0.25, 0.46, 0.45, 0.94],
+        onComplete: () => {
+          setIdx((i) => i - 1);
+          x.set(0);
+          animatingRef.current = false;
+        },
+      });
+    } else {
+      springBack();
+    }
+  }
+
+  function handleClick() {
+    if (draggedRef.current) {
+      draggedRef.current = false;
+      return;
+    }
+    onNavigate(circle.id);
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        width: "100%",
+        height: "80svh",
+        scrollSnapAlign: "start",
+        position: "relative",
+        overflow: "hidden",
+        cursor: "pointer",
+      }}
+    >
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={1}
+        dragMomentum={false}
+        onDragEnd={handleDragEnd}
+        onClick={handleClick}
+        style={{
+          x,
+          position: "absolute",
+          inset: 0,
+          touchAction: "pan-y",
+        }}
+      >
+        {newerPost && (
+          <PhotoLayer
+            post={newerPost}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={-100}
+          />
+        )}
+        {current && (
+          <PhotoLayer
+            post={current}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={0}
+            eager={index === 0}
+          />
+        )}
+        {olderPost && (
+          <PhotoLayer
+            post={olderPost}
+            circleEmoji={circle.emoji}
+            gradient={gradient}
+            leftPercent={100}
+          />
+        )}
+      </motion.div>
+
+      {/* Top overlay — circle name + progress dots */}
       <div
         style={{
-          position: "absolute", top: 0, left: 0, right: 0,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
           padding: "100px 16px 24px",
           background: "linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)",
+          pointerEvents: "none",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {post.circle.icon_url ? (
+          {circle.icon_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={post.circle.icon_url}
+              src={circle.icon_url}
               alt=""
               loading="lazy"
               style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1.5px solid rgba(255,255,255,0.25)" }}
             />
           ) : (
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>
-              {post.circle.emoji}
+              {circle.emoji}
             </div>
           )}
           <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: "0.02em" }}>
-            {post.circle.name}
+            {circle.name}
           </span>
-          {post.circle.category && (
+          {circle.category && (
             <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(167,139,250,0.25)", border: "1px solid rgba(167,139,250,0.4)", color: "#C4B5FD", letterSpacing: "0.04em" }}>
-              {post.circle.category}
+              {circle.category}
             </span>
           )}
         </div>
+
+        {/* Progress dots — 左=新しい / 右=古い(写真ストリップの並びに合わせる) */}
+        {maxIdx > minIdx && (
+          <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
+            {Array.from({ length: maxIdx - minIdx + 1 }).map((_, i) => {
+              const dotIdx = maxIdx - i;
+              const active = dotIdx === idx;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    borderRadius: 1,
+                    background: active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.22)",
+                    transition: "background 0.25s ease",
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Bottom overlay — caption */}
-      {post.caption && (
+      {/* Bottom overlay — caption (left side only; right side is reserved for poster chip) */}
+      {current?.caption && (
         <div
           style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "48px 16px 24px",
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: "48px 140px 24px 16px",
             background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
+            pointerEvents: "none",
           }}
         >
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 1.55 }}>{post.caption}</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>{post.month}月</p>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 1.55 }}>{current.caption}</p>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 6 }}>
+            {current.year}年{current.month}月
+          </p>
         </div>
       )}
+
+      {/* Poster chip — bottom-right.
+          If the post is by the current user, use their user_metadata directly
+          (so the user's own nickname shows even if the public profiles table
+          is missing or hasn't synced yet). */}
+      {current && (() => {
+        const isMine = !!currentUserId && current.posted_by === currentUserId;
+        const resolvedProfile = isMine
+          ? currentUserProfile
+          : current.posted_by
+          ? profiles[current.posted_by]
+          : undefined;
+        return <PosterChip profile={resolvedProfile} posterEmail={undefined} />;
+      })()}
+
+      {/* Delete button — top-left, only for posts authored by the current user */}
+      {current && currentUserId && current.posted_by === currentUserId && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeletePost(current);
+          }}
+          aria-label="この投稿を削除"
+          style={{
+            position: "absolute",
+            top: 100,
+            left: 16,
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.55)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            backdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+            zIndex: 5,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+          }}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(248,113,113,0.95)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+          </svg>
+        </motion.button>
+      )}
+
+      {/* Heart favorite button — top-right, only for members of this circle */}
+      {canFavorite && current && (
+        <motion.button
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(current.id, circle.id);
+          }}
+          aria-label={favorites.includes(current.id) ? "お気に入りを解除" : "お気に入りに追加"}
+          style={{
+            position: "absolute",
+            top: 100,
+            right: 16,
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: favorites.includes(current.id)
+              ? "rgba(248,113,113,0.22)"
+              : "rgba(0,0,0,0.5)",
+            border: favorites.includes(current.id)
+              ? "1px solid rgba(248,113,113,0.6)"
+              : "1px solid rgba(255,255,255,0.2)",
+            backdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            padding: 0,
+            zIndex: 5,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
+          }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill={favorites.includes(current.id) ? "#F87171" : "none"}
+            stroke={favorites.includes(current.id) ? "#F87171" : "rgba(255,255,255,0.9)"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </motion.button>
+      )}
+    </div>
+  );
+}
+
+function PosterChip({
+  profile,
+  posterEmail,
+}: {
+  profile: PosterProfile | undefined;
+  posterEmail: string | undefined;
+}) {
+  const name = profile?.nickname?.trim() || posterEmail?.split("@")[0] || "名無し";
+  const initial = name.charAt(0).toUpperCase();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 24,
+        right: 16,
+        zIndex: 4,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "4px 12px 4px 4px",
+        borderRadius: 999,
+        background: "rgba(0,0,0,0.55)",
+        border: "1px solid rgba(255,255,255,0.14)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+        maxWidth: 160,
+        pointerEvents: "none",
+      }}
+    >
+      {profile?.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={profile.avatar_url}
+          alt=""
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            objectFit: "cover",
+            flexShrink: 0,
+            border: "1px solid rgba(255,255,255,0.25)",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
+            border: "1px solid rgba(167,139,250,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            fontSize: 13,
+            color: "#E9E0FF",
+            fontWeight: 600,
+            letterSpacing: "0.02em",
+          }}
+        >
+          {initial}
+        </div>
+      )}
+      <span
+        style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.92)",
+          fontWeight: 500,
+          letterSpacing: "0.02em",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {name}
+      </span>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -9,7 +9,28 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "UniMo",
-  description: "時間を振り返る体験",
+  description: "大学サークル・部活の活動記録SNS",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "UniMo",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0D0D0F",
 };
 
 export default function RootLayout({
@@ -19,6 +40,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={`${inter.variable} h-full`}>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <body className="min-h-full flex flex-col" style={{ background: "#0D0D0F" }}>
         {children}
       </body>
