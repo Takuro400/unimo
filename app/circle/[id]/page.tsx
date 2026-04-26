@@ -329,7 +329,7 @@ export default function CircleDetailPage() {
                   initialIndex={selectedMonth - 1}
                   onChange={(idx) => setSelectedMonth(idx + 1)}
                   activeIndices={monthsWithPosts}
-                  size={240}
+                  size={290}
                 />
               </div>
             </motion.div>
@@ -356,7 +356,7 @@ export default function CircleDetailPage() {
                   initialIndex={Math.min(selectedDay, dayCount) - 1}
                   onChange={(idx) => setSelectedDay(idx + 1)}
                   activeIndices={daysWithPosts}
-                  size={260}
+                  size={310}
                 />
               </div>
             </motion.div>
