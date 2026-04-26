@@ -57,6 +57,7 @@ export default function CircleDetailPage() {
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favLimitToast, setFavLimitToast] = useState(false);
+  const [deleteErrorToast, setDeleteErrorToast] = useState(false);
 
   const [view, setView] = useState<View>(initialView);
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
@@ -133,6 +134,8 @@ export default function CircleDetailPage() {
         console.error("post delete failed", delErr);
         // Revert optimistic update
         setPosts((prev) => [post, ...prev]);
+        setDeleteErrorToast(true);
+        setTimeout(() => setDeleteErrorToast(false), 3000);
         return;
       }
       // Best-effort: remove the media file from storage
@@ -420,6 +423,36 @@ export default function CircleDetailPage() {
             }}
           >
             お気に入りは6つまで。マイページで整理してね
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete error toast */}
+      <AnimatePresence>
+        {deleteErrorToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            style={{
+              position: "fixed",
+              bottom: 112,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 80,
+              padding: "10px 18px",
+              borderRadius: 12,
+              background: "rgba(20,20,22,0.95)",
+              border: "1px solid rgba(248,113,113,0.4)",
+              color: "rgba(248,113,113,0.9)",
+              fontSize: 12,
+              whiteSpace: "nowrap",
+              letterSpacing: "0.03em",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            削除に失敗しました。権限を確認してください。
           </motion.div>
         )}
       </AnimatePresence>
