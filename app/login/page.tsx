@@ -247,7 +247,7 @@ export default function LoginPage() {
             </div>
 
             <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.2)" }}>
-              メールに届いた認証コードを次の画面で入力します
+              メールに届いた認証コードを次の画面で入力します（6〜8桁）
             </p>
           </motion.div>
         ) : (
@@ -276,7 +276,7 @@ export default function LoginPage() {
                 認証コードを入力
               </p>
               <p className="text-xs mb-5 leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
-                {email} 宛に認証コードを送りました。メールの中の数字をここに入れてください。
+                {email} 宛に認証コードを送りました。メールに届いた数字をそのまま入力してください。
               </p>
 
               <form onSubmit={handleVerifyCode} className="flex flex-col gap-3">
@@ -285,7 +285,7 @@ export default function LoginPage() {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                  placeholder="------"
+                  placeholder="認証コードを入力"
                   required
                   autoComplete="one-time-code"
                   inputMode="numeric"
