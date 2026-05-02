@@ -53,7 +53,6 @@ export default function PostFlowPage() {
     })();
   }, [user]);
 
-  // Revoke the object URL when it changes or on unmount to avoid leaks
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -118,7 +117,7 @@ export default function PostFlowPage() {
   const selectedCircle = myCircles.find((c) => c.id === circleId) ?? null;
 
   return (
-    <div style={{ background: "#0D0D0F", minHeight: "100svh" }}>
+    <div style={{ background: "#FAFAFA", minHeight: "100svh" }}>
       <AnimatePresence mode="wait">
         {step === "photo" && (
           <PhotoStep
@@ -154,7 +153,6 @@ export default function PostFlowPage() {
         )}
       </AnimatePresence>
 
-      {/* Hidden file inputs — opened by the camera/gallery buttons */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -200,14 +198,23 @@ function PhotoStep({
       className="flex flex-col"
       style={{ minHeight: "100svh", paddingBottom: 120 }}
     >
-      <div style={{ padding: "48px 20px 16px" }}>
-        <h1 className="text-2xl font-bold tracking-widest silver-text">投稿</h1>
-        <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.04em" }}>
+      {/* Header */}
+      <div
+        style={{
+          padding: "48px 20px 16px",
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
+        }}
+      >
+        <h1 className="text-2xl font-bold tracking-widest" style={{ color: "#1F2937" }}>投稿</h1>
+        <p className="text-xs mt-1" style={{ color: "#9CA3AF", letterSpacing: "0.04em" }}>
           まず写真を撮影するか選択してください
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
         {/* Big camera tap target */}
         <motion.button
           whileTap={{ scale: 0.97 }}
@@ -215,9 +222,9 @@ function PhotoStep({
           className="w-full max-w-xs rounded-3xl flex flex-col items-center justify-center"
           style={{
             height: 240,
-            background: "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.06))",
-            border: "1px solid rgba(167,139,250,0.4)",
-            boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 28px rgba(167,139,250,0.15)",
+            background: "#FFF0F6",
+            border: "1px solid rgba(212,83,126,0.25)",
+            boxShadow: "0 12px 32px rgba(212,83,126,0.10)",
             cursor: "pointer",
           }}
         >
@@ -226,23 +233,23 @@ function PhotoStep({
               width: 72,
               height: 72,
               borderRadius: "50%",
-              background: "rgba(167,139,250,0.18)",
-              border: "1px solid rgba(167,139,250,0.4)",
+              background: "rgba(212,83,126,0.12)",
+              border: "1px solid rgba(212,83,126,0.25)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 16,
             }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E9E0FF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#E9E0FF", letterSpacing: "0.06em" }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#D4537E", letterSpacing: "0.06em" }}>
             カメラを起動
           </span>
-          <span style={{ fontSize: 11, color: "rgba(196,181,253,0.65)", marginTop: 4 }}>
+          <span style={{ fontSize: 11, color: "rgba(212,83,126,0.6)", marginTop: 4 }}>
             タップして撮影
           </span>
         </motion.button>
@@ -253,10 +260,11 @@ function PhotoStep({
           onClick={onPickGallery}
           className="w-full max-w-xs rounded-2xl flex items-center justify-center gap-2"
           style={{
-            padding: "12px 16px",
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.7)",
+            padding: "14px 16px",
+            background: "#FFFFFF",
+            border: "0.5px solid #E5E5E5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            color: "#6C757D",
             fontSize: 13,
             letterSpacing: "0.04em",
             cursor: "pointer",
@@ -275,11 +283,11 @@ function PhotoStep({
           <div
             className="w-full max-w-xs rounded-2xl p-4 text-center mt-2"
             style={{
-              background: "rgba(248,113,113,0.06)",
-              border: "1px solid rgba(248,113,113,0.18)",
+              background: "rgba(239,68,68,0.05)",
+              border: "1px solid rgba(239,68,68,0.18)",
             }}
           >
-            <p className="text-xs" style={{ color: "rgba(248,113,113,0.9)", lineHeight: 1.7 }}>
+            <p className="text-xs" style={{ color: "#EF4444", lineHeight: 1.7 }}>
               参加しているサークルがまだありません。
               <br />
               招待コードでサークルに参加してから投稿できます。
@@ -289,9 +297,9 @@ function PhotoStep({
                 className="inline-block mt-3 rounded-xl px-4 py-2"
                 style={{
                   fontSize: 12,
-                  background: "rgba(248,113,113,0.12)",
-                  border: "1px solid rgba(248,113,113,0.3)",
-                  color: "rgba(248,113,113,0.9)",
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  color: "#EF4444",
                   letterSpacing: "0.04em",
                 }}
               >
@@ -302,13 +310,13 @@ function PhotoStep({
         )}
       </div>
 
-      {/* Back link (small) */}
+      {/* Back link */}
       <div className="flex justify-center" style={{ paddingBottom: 110 }}>
         <button
           onClick={onBack}
           style={{
             fontSize: 11,
-            color: "rgba(255,255,255,0.3)",
+            color: "#9CA3AF",
             background: "none",
             border: "none",
             cursor: "pointer",
@@ -368,31 +376,47 @@ function ComposeStep({
       {/* Header */}
       <div
         className="flex items-center gap-3"
-        style={{ padding: "48px 20px 12px" }}
+        style={{
+          padding: "48px 20px 12px",
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
+        }}
       >
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={onRetake}
-          className="glass rounded-full flex items-center justify-center"
-          style={{ width: 36, height: 36, border: "1px solid rgba(255,255,255,0.10)", background: "none", cursor: "pointer" }}
+          className="rounded-full flex items-center justify-center"
+          style={{
+            width: 36,
+            height: 36,
+            background: "#FFFFFF",
+            border: "0.5px solid #E5E5E5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            cursor: "pointer",
+          }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C757D" strokeWidth="2" style={{ pointerEvents: "none" }}>
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </motion.button>
         <div className="flex-1">
-          <h1 className="text-sm font-semibold silver-text">投稿内容を確認</h1>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+          <h1 className="text-sm font-semibold" style={{ color: "#1F2937" }}>投稿内容を確認</h1>
+          <p className="text-xs" style={{ color: "#9CA3AF" }}>
             どのサークルに投稿するか選んでください
           </p>
         </div>
       </div>
 
-      <div className="px-4">
+      <div className="px-4 pt-4">
         {/* Preview */}
         <div
-          className="glass rounded-2xl overflow-hidden"
-          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+          className="rounded-2xl overflow-hidden"
+          style={{
+            border: "0.5px solid #E5E5E5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          }}
         >
           {isVideo ? (
             <video
@@ -409,7 +433,7 @@ function ComposeStep({
             <img
               src={preview}
               alt=""
-              style={{ width: "100%", maxHeight: 420, objectFit: "contain", display: "block", background: "#000" }}
+              style={{ width: "100%", maxHeight: 420, objectFit: "contain", display: "block", background: "#F1EFE8" }}
             />
           )}
         </div>
@@ -418,7 +442,7 @@ function ComposeStep({
             onClick={onRetake}
             style={{
               fontSize: 11,
-              color: "rgba(196,181,253,0.7)",
+              color: "#D4537E",
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -431,15 +455,18 @@ function ComposeStep({
 
         {/* Circle picker */}
         <div className="mt-5">
-          <p className="text-xs mb-2 px-1" style={{ color: "rgba(255,255,255,0.5)", letterSpacing: "0.08em" }}>
-            投稿先のサークル {selectedCircle && <span style={{ color: "#C4B5FD" }}>— {selectedCircle.name}</span>}
+          <p className="text-xs mb-2 px-1" style={{ color: "#6C757D", letterSpacing: "0.08em" }}>
+            投稿先のサークル{selectedCircle && <span style={{ color: "#D4537E" }}> — {selectedCircle.name}</span>}
           </p>
           {myCircles.length === 0 ? (
             <div
-              className="glass rounded-2xl p-4 text-center"
-              style={{ border: "1px dashed rgba(255,255,255,0.08)" }}
+              className="rounded-2xl p-4 text-center"
+              style={{
+                background: "#FFFFFF",
+                border: "1px dashed #E5E5E5",
+              }}
             >
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs" style={{ color: "#9CA3AF" }}>
                 参加サークルがありません
               </p>
             </div>
@@ -455,14 +482,13 @@ function ComposeStep({
                     className="w-full rounded-xl flex items-center gap-3"
                     style={{
                       padding: "10px 12px",
-                      background: active
-                        ? "rgba(167,139,250,0.16)"
-                        : "rgba(255,255,255,0.04)",
+                      background: active ? "#FFF0F6" : "#FFFFFF",
                       border: active
-                        ? "1px solid rgba(167,139,250,0.42)"
-                        : "1px solid rgba(255,255,255,0.07)",
+                        ? "1px solid rgba(212,83,126,0.35)"
+                        : "0.5px solid #E5E5E5",
                       cursor: "pointer",
                       transition: "all 0.2s ease",
+                      boxShadow: active ? "none" : "0 1px 4px rgba(0,0,0,0.04)",
                     }}
                   >
                     {c.icon_url ? (
@@ -474,7 +500,7 @@ function ComposeStep({
                           width: 32,
                           height: 32,
                           borderRadius: "50%",
-                          background: "rgba(255,255,255,0.08)",
+                          background: active ? "rgba(212,83,126,0.10)" : "#F1EFE8",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -490,13 +516,13 @@ function ComposeStep({
                       style={{
                         fontSize: 13,
                         fontWeight: active ? 600 : 500,
-                        color: active ? "#E9E0FF" : "rgba(255,255,255,0.7)",
+                        color: active ? "#D4537E" : "#1F2937",
                       }}
                     >
                       {c.name}
                     </span>
                     {active && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     )}
@@ -509,7 +535,7 @@ function ComposeStep({
 
         {/* Month */}
         <div className="mt-5">
-          <p className="text-xs mb-2 px-1" style={{ color: "rgba(255,255,255,0.5)", letterSpacing: "0.08em" }}>
+          <p className="text-xs mb-2 px-1" style={{ color: "#6C757D", letterSpacing: "0.08em" }}>
             活動の月
           </p>
           <div className="grid grid-cols-6 gap-1.5">
@@ -523,9 +549,10 @@ function ComposeStep({
                   onClick={() => onChangeMonth(i + 1)}
                   className="rounded-xl py-2 text-xs"
                   style={{
-                    background: active ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-                    border: active ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                    color: active ? "#C4B5FD" : "rgba(255,255,255,0.4)",
+                    background: active ? "#FFF0F6" : "#FFFFFF",
+                    border: active ? "1px solid rgba(212,83,126,0.4)" : "0.5px solid #E5E5E5",
+                    color: active ? "#D4537E" : "#6C757D",
+                    fontWeight: active ? 600 : 400,
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                   }}
@@ -539,7 +566,7 @@ function ComposeStep({
 
         {/* Caption */}
         <div className="mt-5">
-          <p className="text-xs mb-2 px-1" style={{ color: "rgba(255,255,255,0.5)", letterSpacing: "0.08em" }}>
+          <p className="text-xs mb-2 px-1" style={{ color: "#6C757D", letterSpacing: "0.08em" }}>
             キャプション（任意）
           </p>
           <textarea
@@ -549,15 +576,15 @@ function ComposeStep({
             rows={3}
             className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              color: "var(--silver-bright)",
+              background: "#FFFFFF",
+              border: "0.5px solid #E5E5E5",
+              color: "#1F2937",
             }}
           />
         </div>
 
         {error && (
-          <p className="text-xs mt-2 px-1" style={{ color: "rgba(248,113,113,0.85)" }}>
+          <p className="text-xs mt-2 px-1" style={{ color: "#EF4444" }}>
             {error}
           </p>
         )}
@@ -572,7 +599,7 @@ function ComposeStep({
           right: 0,
           zIndex: 55,
           padding: "12px 20px 0",
-          background: "linear-gradient(to top, #0D0D0F 60%, transparent)",
+          background: "linear-gradient(to top, rgba(250,250,250,1) 60%, transparent)",
         }}
       >
         <motion.button
@@ -581,18 +608,15 @@ function ComposeStep({
           disabled={!canSubmit}
           className="w-full rounded-2xl py-4"
           style={{
-            background: canSubmit
-              ? "linear-gradient(135deg, rgba(167,139,250,0.25), rgba(167,139,250,0.10))"
-              : "rgba(255,255,255,0.04)",
-            border: canSubmit
-              ? "1px solid rgba(167,139,250,0.38)"
-              : "1px solid rgba(255,255,255,0.08)",
-            color: canSubmit ? "#C4B5FD" : "rgba(255,255,255,0.25)",
+            background: canSubmit ? "#D4537E" : "rgba(0,0,0,0.04)",
+            border: canSubmit ? "none" : "0.5px solid #E5E5E5",
+            color: canSubmit ? "#FFFFFF" : "#9CA3AF",
             fontSize: 14,
             fontWeight: 600,
             letterSpacing: "0.05em",
             cursor: canSubmit ? "pointer" : "not-allowed",
             transition: "all 0.25s ease",
+            boxShadow: canSubmit ? "0 4px 14px rgba(212,83,126,0.35)" : "none",
           }}
         >
           {submitting ? "投稿中..." : circleId ? "投稿する" : "投稿先を選んでください"}
@@ -612,23 +636,27 @@ function DoneStep({ selectedCircle }: { selectedCircle: Circle | null }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
       className="flex items-center justify-center"
-      style={{ minHeight: "100svh", padding: 32 }}
+      style={{ minHeight: "100svh", padding: 32, background: "#FAFAFA" }}
     >
       <div
-        className="glass rounded-3xl p-10 flex flex-col items-center"
-        style={{ border: "1px solid rgba(167,139,250,0.25)" }}
+        className="rounded-3xl p-10 flex flex-col items-center"
+        style={{
+          background: "#FFFFFF",
+          border: "0.5px solid #E5E5E5",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+        }}
       >
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-          style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.35)" }}
+          style={{ background: "#FFF0F6", border: "1px solid rgba(212,83,126,0.25)" }}
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <p className="text-sm font-semibold silver-text">投稿しました</p>
+        <p className="text-sm font-semibold" style={{ color: "#1F2937" }}>投稿しました</p>
         {selectedCircle && (
-          <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <p className="text-xs mt-1.5" style={{ color: "#9CA3AF" }}>
             {selectedCircle.emoji} {selectedCircle.name} のページへ移動します
           </p>
         )}
