@@ -8,6 +8,19 @@ export interface Circle {
   background_url: string | null;
   created_by: string | null;
   created_at: string;
+  // optional extended fields (used in favorites compare view)
+  activity_days?: string | null;
+  member_count?: number | null;
+  fee?: string | null;
+  location?: string | null;
+}
+
+export interface Favorite {
+  id: string;
+  user_id: string;
+  circle_id: string;
+  created_at: string;
+  circle?: Circle;
 }
 
 export interface CircleMember {

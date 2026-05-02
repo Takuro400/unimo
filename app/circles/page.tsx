@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MOCK_CIRCLES, MOCK_POSTS, CATEGORY_COLORS } from "@/lib/mock-data";
+import { useFavorites } from "@/lib/useFavorites";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const GRADIENTS = [
   "from-slate-700 to-slate-900",
@@ -18,6 +20,7 @@ const GRADIENTS = [
 
 export default function CirclesPage() {
   const router = useRouter();
+  const { isFavorited, toggle } = useFavorites();
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "#0D0D0F" }}>
@@ -68,6 +71,15 @@ export default function CirclesPage() {
                             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>{circle.category}</span>
                           </div>
                         )}
+                        <div className="absolute top-1.5 right-1.5">
+                          <FavoriteButton
+                            circleId={circle.id}
+                            isFavorited={isFavorited(circle.id)}
+                            onToggle={toggle}
+                            size={28}
+                            dark
+                          />
+                        </div>
                       </div>
                       <div className="px-3 py-2.5">
                         <p className="text-sm font-semibold truncate" style={{ color: "var(--silver-bright)" }}>{circle.name}</p>
@@ -101,6 +113,15 @@ export default function CirclesPage() {
                             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>{circle.category}</span>
                           </div>
                         )}
+                        <div className="absolute top-1.5 right-1.5">
+                          <FavoriteButton
+                            circleId={circle.id}
+                            isFavorited={isFavorited(circle.id)}
+                            onToggle={toggle}
+                            size={28}
+                            dark
+                          />
+                        </div>
                       </div>
                       <div className="px-3 py-2.5">
                         <p className="text-sm font-semibold truncate" style={{ color: "var(--silver-bright)" }}>{circle.name}</p>

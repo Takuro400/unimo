@@ -293,8 +293,8 @@ export default function Home() {
             boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
           }}
         >
-          <span style={{ fontSize: 14, color: "#A78BFA" }}>🎫</span>
-          <span style={{ fontSize: 13, color: "#C4B5FD", letterSpacing: "0.03em" }}>サークルに参加する</span>
+          <span style={{ fontSize: 14, color: "#A78BFA" }}>🔑</span>
+          <span style={{ fontSize: 13, color: "#C4B5FD", letterSpacing: "0.03em" }}>招待コードで参加</span>
         </motion.div>
       </div>
 
@@ -1087,9 +1087,9 @@ function JoinModal({ user, onClose, onJoined }: {
       >
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "0 auto 24px" }} />
 
-        <p className="text-base font-semibold silver-text mb-1">サークルに参加する</p>
+        <p className="text-base font-semibold silver-text mb-1">グループに参加</p>
         <p className="text-xs mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
-          サークルの担当者から受け取った6桁の招待コードを入力してください
+          担当者から受け取った招待コードを入力してください
         </p>
 
         <form onSubmit={handleJoin} className="flex flex-col gap-3">

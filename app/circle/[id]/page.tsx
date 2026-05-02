@@ -5,10 +5,12 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
+import { useFavorites } from "@/lib/useFavorites";
 import { supabase } from "@/lib/supabase";
 import { MOCK_CIRCLES, MOCK_POSTS } from "@/lib/mock-data";
 import type { Circle, Post } from "@/lib/types";
 import Dial from "@/components/Dial";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 const GRADIENTS = [
@@ -58,6 +60,15 @@ export default function CircleDetailPage() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [favLimitToast, setFavLimitToast] = useState(false);
   const [deleteErrorToast, setDeleteErrorToast] = useState(false);
+
+  // サークル自体のお気に入り（ハート）
+  const {
+    isFavorited: isCircleFavorited,
+    isPending: isCircleFavPending,
+    toggle: toggleCircleFavorite,
+    errorToast: circFavError,
+    clearErrorToast: clearCircFavError,
+  } = useFavorites();
 
   const [view, setView] = useState<View>(initialView);
   const [selectedMonth, setSelectedMonth] = useState(initialMonth);
@@ -254,6 +265,15 @@ export default function CircleDetailPage() {
                 ? `${selectedMonth}月 / 日を選ぶ`
                 : `${selectedMonth}月${selectedDay}日`}
             </span>
+            {/* サークルお気に入りボタン */}
+            <FavoriteButton
+              circleId={id}
+              isFavorited={isCircleFavorited(id)}
+              isPending={isCircleFavPending(id)}
+              onToggle={toggleCircleFavorite}
+              size={34}
+              dark
+            />
           </div>
         </div>
       </div>
@@ -453,6 +473,46 @@ export default function CircleDetailPage() {
             }}
           >
             削除に失敗しました。権限を確認してください。
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* お気に入り操作エラートースト */}
+      <AnimatePresence>
+        {circFavError && (
+          <motion.div
+            key="circfav-error"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            onClick={clearCircFavError}
+            style={{
+              position: "fixed",
+              bottom: 140,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 80,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "10px 16px",
+              borderRadius: 12,
+              background: "rgba(20,20,22,0.95)",
+              border: "1px solid rgba(248,113,113,0.4)",
+              color: "rgba(248,113,113,0.9)",
+              fontSize: 12,
+              whiteSpace: "nowrap",
+              letterSpacing: "0.03em",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+              cursor: "pointer",
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            {circFavError.message}
           </motion.div>
         )}
       </AnimatePresence>
