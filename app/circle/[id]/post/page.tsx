@@ -108,8 +108,17 @@ export default function PostPage() {
 
   if (user === undefined || authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAFA" }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: "2px solid #E5E5E5",
+            borderTopColor: "#D4537E",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -118,26 +127,41 @@ export default function PostPage() {
   if (!circle || !isMember) return null;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#0D0D0F" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#FAFAFA" }}>
       {/* Header */}
-      <div className="px-4 pt-12 pb-4 flex items-center gap-3">
+      <div
+        className="px-4 pt-12 pb-4 flex items-center gap-3"
+        style={{
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
+        }}
+      >
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={() => router.back()}
-          className="glass rounded-full flex items-center justify-center"
-          style={{ width: 36, height: 36, border: "1px solid rgba(255,255,255,0.10)", background: "none", cursor: "pointer" }}
+          className="rounded-full flex items-center justify-center"
+          style={{
+            width: 36,
+            height: 36,
+            background: "#FFFFFF",
+            border: "0.5px solid #E5E5E5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            cursor: "pointer",
+          }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C757D" strokeWidth="2" style={{ pointerEvents: "none" }}>
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </motion.button>
         <div>
-          <h1 className="text-sm font-semibold silver-text">投稿する</h1>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{circle.emoji} {circle.name}</p>
+          <h1 className="text-sm font-semibold" style={{ color: "#1F2937" }}>投稿する</h1>
+          <p className="text-xs" style={{ color: "#9CA3AF" }}>{circle.emoji} {circle.name}</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-10">
+      <div className="flex-1 overflow-y-auto px-4 pb-10 pt-4">
         <AnimatePresence mode="wait">
           {done ? (
             <motion.div
@@ -147,16 +171,25 @@ export default function PostPage() {
               transition={{ duration: 0.5 }}
               className="flex flex-col items-center justify-center py-20"
             >
-              <div className="glass rounded-3xl p-10 flex flex-col items-center" style={{ border: "1px solid rgba(167,139,250,0.2)" }}>
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                  style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.3)" }}>
-                  <span style={{ fontSize: 28 }}>✓</span>
+              <div
+                className="rounded-3xl p-10 flex flex-col items-center"
+                style={{
+                  background: "#FFFFFF",
+                  border: "0.5px solid #E5E5E5",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                }}
+              >
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                  style={{ background: "#FFF0F6", border: "1px solid rgba(212,83,126,0.2)" }}
+                >
+                  <span style={{ fontSize: 28, color: "#D4537E" }}>✓</span>
                 </div>
-                <p className="text-sm font-medium silver-text">投稿しました</p>
+                <p className="text-sm font-medium" style={{ color: "#1F2937" }}>投稿しました</p>
                 <button
                   onClick={() => router.push(`/circle/${id}`)}
                   className="mt-6 text-xs"
-                  style={{ color: "rgba(167,139,250,0.7)", background: "none", border: "none", cursor: "pointer" }}
+                  style={{ color: "#D4537E", background: "none", border: "none", cursor: "pointer" }}
                 >
                   サークルページに戻る
                 </button>
@@ -173,7 +206,7 @@ export default function PostPage() {
             >
               {/* Month select */}
               <div>
-                <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>月を選択</p>
+                <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>月を選択</p>
                 <div className="grid grid-cols-6 gap-1.5">
                   {MONTHS.map((m, i) => (
                     <motion.button
@@ -181,10 +214,14 @@ export default function PostPage() {
                       onClick={() => setMonth(i + 1)}
                       className="rounded-xl py-2 text-xs"
                       style={{
-                        background: month === i + 1 ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-                        border: month === i + 1 ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                        color: month === i + 1 ? "#A78BFA" : "rgba(255,255,255,0.4)",
-                        cursor: "pointer", transition: "all 0.2s ease",
+                        background: month === i + 1 ? "#FFF0F6" : "#FFFFFF",
+                        border: month === i + 1
+                          ? "1px solid rgba(212,83,126,0.4)"
+                          : "0.5px solid #E5E5E5",
+                        color: month === i + 1 ? "#D4537E" : "#6C757D",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        fontWeight: month === i + 1 ? 600 : 400,
                       }}
                     >
                       {m}
@@ -196,7 +233,7 @@ export default function PostPage() {
               {/* Day & Time */}
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>日</p>
+                  <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>日</p>
                   <input
                     type="number"
                     min={1}
@@ -209,26 +246,26 @@ export default function PostPage() {
                     }}
                     className="w-full rounded-xl px-4 py-3 text-sm outline-none text-center"
                     style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      color: "var(--silver-bright)",
+                      background: "#FFFFFF",
+                      border: "0.5px solid #E5E5E5",
+                      color: "#1F2937",
                       appearance: "none",
                       MozAppearance: "textfield",
                     }}
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>時間</p>
+                  <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>時間</p>
                   <input
                     type="time"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     className="w-full rounded-xl px-4 py-3 text-sm outline-none"
                     style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      color: "var(--silver-bright)",
-                      colorScheme: "dark",
+                      background: "#FFFFFF",
+                      border: "0.5px solid #E5E5E5",
+                      color: "#1F2937",
+                      colorScheme: "light",
                     }}
                   />
                 </div>
@@ -236,10 +273,15 @@ export default function PostPage() {
 
               {/* File upload */}
               <div>
-                <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>写真・動画</p>
+                <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>写真・動画</p>
                 <label
-                  className="glass rounded-2xl flex flex-col items-center justify-center cursor-pointer"
-                  style={{ height: preview ? "auto" : 160, border: "1px dashed rgba(255,255,255,0.15)", overflow: "hidden" }}
+                  className="rounded-2xl flex flex-col items-center justify-center cursor-pointer"
+                  style={{
+                    height: preview ? "auto" : 160,
+                    border: "1.5px dashed #E5E5E5",
+                    background: "#FFFFFF",
+                    overflow: "hidden",
+                  }}
                 >
                   <input type="file" accept="image/*,video/*" onChange={handleFile} className="hidden" />
                   {preview ? (
@@ -247,8 +289,8 @@ export default function PostPage() {
                     <img src={preview} alt="preview" style={{ width: "100%", maxHeight: 300, objectFit: "cover" }} />
                   ) : (
                     <div className="flex flex-col items-center gap-2 py-8">
-                      <span style={{ fontSize: 32, opacity: 0.2 }}>+</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>タップして選択</span>
+                      <span style={{ fontSize: 32, opacity: 0.25, color: "#D4537E" }}>+</span>
+                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>タップして選択</span>
                     </div>
                   )}
                 </label>
@@ -256,35 +298,48 @@ export default function PostPage() {
 
               {/* Caption */}
               <div>
-                <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>キャプション（任意）</p>
+                <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>キャプション（任意）</p>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="活動の様子を一言..."
                   rows={3}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "var(--silver-bright)" }}
+                  style={{
+                    background: "#FFFFFF",
+                    border: "0.5px solid #E5E5E5",
+                    color: "#1F2937",
+                  }}
                 />
               </div>
 
               <AnimatePresence>
                 {error && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="text-xs px-1" style={{ color: "rgba(248,113,113,0.8)" }}>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs px-1"
+                    style={{ color: "#EF4444" }}
+                  >
                     {error}
                   </motion.p>
                 )}
               </AnimatePresence>
 
               <motion.button
-                type="submit" disabled={!file || loading} whileTap={{ scale: 0.97 }}
+                type="submit"
+                disabled={!file || loading}
+                whileTap={{ scale: 0.97 }}
                 className="w-full rounded-xl py-3.5 text-sm font-medium"
                 style={{
-                  background: !file || loading ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg, rgba(192,192,208,0.18), rgba(140,140,160,0.10))",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  color: !file || loading ? "rgba(255,255,255,0.25)" : "var(--silver-bright)",
+                  background: !file || loading ? "rgba(0,0,0,0.04)" : "#D4537E",
+                  border: !file || loading ? "0.5px solid #E5E5E5" : "none",
+                  color: !file || loading ? "#9CA3AF" : "#FFFFFF",
                   cursor: !file || loading ? "not-allowed" : "pointer",
-                  letterSpacing: "0.04em", transition: "all 0.3s ease",
+                  letterSpacing: "0.04em",
+                  transition: "all 0.3s ease",
+                  boxShadow: !file || loading ? "none" : "0 4px 14px rgba(212,83,126,0.35)",
                 }}
               >
                 {loading ? "投稿中..." : "投稿する"}

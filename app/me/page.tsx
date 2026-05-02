@@ -71,8 +71,6 @@ export default function MePage() {
       setMeta(next);
       if (supabase && user && user.id !== "dev-user") {
         await supabase.auth.updateUser({ data: next });
-        // Also mirror readable fields to the public profiles table so other users can see them.
-        // Graceful: if the table doesn't exist yet, the error is swallowed.
         try {
           await supabase.from("profiles").upsert(
             {
@@ -160,15 +158,20 @@ export default function MePage() {
   });
 
   return (
-    <div style={{ background: "#0D0D0F", minHeight: "100svh" }}>
+    <div style={{ background: "#FAFAFA", minHeight: "100svh" }}>
       {/* Header */}
       <div
         style={{
-          padding: "48px 20px 8px",
-          background: "linear-gradient(to bottom, rgba(13,13,15,0.85) 0%, transparent 100%)",
+          padding: "48px 20px 12px",
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
         }}
       >
-        <h1 className="text-2xl font-bold tracking-widest silver-text">マイページ</h1>
+        <h1 className="text-2xl font-bold tracking-widest" style={{ color: "#1F2937" }}>
+          マイページ
+        </h1>
       </div>
 
       <div className="flex flex-col items-center px-5 pb-32">
@@ -196,15 +199,12 @@ export default function MePage() {
         />
 
         <p
-          className="mt-4 text-lg font-semibold silver-text"
-          style={{ letterSpacing: "0.03em" }}
+          className="mt-4 text-lg font-semibold"
+          style={{ color: "#1F2937", letterSpacing: "0.03em" }}
         >
           {displayName}
         </p>
-        <p
-          className="mt-0.5 text-xs"
-          style={{ color: "rgba(255,255,255,0.32)" }}
-        >
+        <p className="mt-0.5 text-xs" style={{ color: "#9CA3AF" }}>
           {user?.email ?? ""}
         </p>
 
@@ -217,9 +217,9 @@ export default function MePage() {
               style={{
                 fontSize: 11,
                 padding: "3px 10px",
-                background: "rgba(167,139,250,0.10)",
-                border: "1px solid rgba(167,139,250,0.22)",
-                color: "rgba(196,181,253,0.9)",
+                background: "#FFF0F6",
+                border: "1px solid rgba(212,83,126,0.22)",
+                color: "#D4537E",
                 letterSpacing: "0.03em",
               }}
             >
@@ -232,7 +232,7 @@ export default function MePage() {
         {favoriteIds.length === 0 && (
           <p
             className="mt-4 text-xs text-center"
-            style={{ color: "rgba(255,255,255,0.35)", maxWidth: 280, lineHeight: 1.6 }}
+            style={{ color: "#9CA3AF", maxWidth: 280, lineHeight: 1.6 }}
           >
             所属サークルの投稿をハートしてお気に入り6つまで登録すると<br />アイコンの周りに表示されます
           </p>
@@ -242,13 +242,17 @@ export default function MePage() {
         <div className="w-full mt-8 max-w-md">
           <h2
             className="text-xs mb-3 px-1"
-            style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em" }}
+            style={{ color: "#9CA3AF", letterSpacing: "0.1em" }}
           >
             プロフィール
           </h2>
           <div
-            className="glass rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "#FFFFFF",
+              border: "0.5px solid #E5E5E5",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            }}
           >
             <FieldRow
               label="ニックネーム"
@@ -296,21 +300,33 @@ export default function MePage() {
         <div className="w-full mt-6 max-w-md">
           <h2
             className="text-xs mb-3 px-1"
-            style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.1em" }}
+            style={{ color: "#9CA3AF", letterSpacing: "0.1em" }}
           >
             所属サークル ({myCircles.length})
           </h2>
           {loading ? (
             <div className="flex justify-center py-6">
-              <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  border: "2px solid #E5E5E5",
+                  borderTopColor: "#D4537E",
+                  animation: "spin 0.8s linear infinite",
+                }}
+              />
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : myCircles.length === 0 ? (
             <div
-              className="glass rounded-2xl p-4 text-center"
-              style={{ border: "1px dashed rgba(255,255,255,0.08)" }}
+              className="rounded-2xl p-4 text-center"
+              style={{
+                background: "#FFFFFF",
+                border: "1px dashed #E5E5E5",
+              }}
             >
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <p className="text-xs" style={{ color: "#9CA3AF" }}>
                 まだサークルに参加していません
               </p>
             </div>
@@ -324,9 +340,11 @@ export default function MePage() {
                 >
                   <motion.div
                     whileTap={{ scale: 0.97 }}
-                    className="glass rounded-xl p-3 flex items-center gap-2"
+                    className="rounded-xl p-3 flex items-center gap-2"
                     style={{
-                      border: "1px solid rgba(255,255,255,0.07)",
+                      background: "#FFFFFF",
+                      border: "0.5px solid #E5E5E5",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
                       cursor: "pointer",
                     }}
                   >
@@ -343,7 +361,7 @@ export default function MePage() {
                           width: 32,
                           height: 32,
                           borderRadius: "50%",
-                          background: "rgba(255,255,255,0.1)",
+                          background: "#F1EFE8",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -356,7 +374,7 @@ export default function MePage() {
                     )}
                     <span
                       className="truncate"
-                      style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}
+                      style={{ fontSize: 12, color: "#1F2937", fontWeight: 500 }}
                     >
                       {c.name}
                     </span>
@@ -372,9 +390,9 @@ export default function MePage() {
           onClick={signOut}
           className="mt-8 w-full max-w-md rounded-2xl py-3"
           style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "rgba(255,255,255,0.4)",
+            background: "#FFFFFF",
+            border: "0.5px solid #E5E5E5",
+            color: "#9CA3AF",
             fontSize: 13,
             letterSpacing: "0.05em",
             cursor: "pointer",
@@ -517,7 +535,7 @@ function FavoritesOrbit({
           width: (radius + slotSize / 2) * 2,
           height: (radius + slotSize / 2) * 2,
           borderRadius: "50%",
-          border: "1px dashed rgba(167,139,250,0.12)",
+          border: "1px dashed rgba(212,83,126,0.18)",
           pointerEvents: "none",
         }}
       />
@@ -532,7 +550,7 @@ function FavoritesOrbit({
         }}
       >
         {posts.map((post, i) => {
-          const angleDeg = i * 60 - 90; // start from top
+          const angleDeg = i * 60 - 90;
           const rad = (angleDeg * Math.PI) / 180;
           const x = size / 2 + Math.cos(rad) * radius - slotSize / 2;
           const y = size / 2 + Math.sin(rad) * radius - slotSize / 2;
@@ -547,7 +565,6 @@ function FavoritesOrbit({
                 height: slotSize,
               }}
             >
-              {/* Inverse rotate so the thumbnail stays upright */}
               <div
                 style={{
                   width: "100%",
@@ -567,7 +584,7 @@ function FavoritesOrbit({
         })}
       </div>
 
-      {/* Central avatar — wrapper handles positioning so framer-motion's whileTap transform doesn't override it */}
+      {/* Central avatar */}
       <div
         style={{
           position: "absolute",
@@ -591,13 +608,13 @@ function FavoritesOrbit({
             boxSizing: "border-box",
             borderRadius: "50%",
             background: avatarUrl
-              ? "rgba(255,255,255,0.04)"
-              : "linear-gradient(135deg, rgba(167,139,250,0.32), rgba(167,139,250,0.12))",
-            border: "2px solid rgba(167,139,250,0.35)",
+              ? "rgba(0,0,0,0.02)"
+              : "linear-gradient(135deg, rgba(212,83,126,0.18), rgba(212,83,126,0.06))",
+            border: "2px solid rgba(212,83,126,0.35)",
             cursor: "pointer",
             overflow: "hidden",
             padding: 0,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.4), 0 0 24px rgba(167,139,250,0.18)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.10), 0 0 24px rgba(212,83,126,0.12)",
           }}
         >
           {avatarUrl ? (
@@ -623,7 +640,7 @@ function FavoritesOrbit({
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 52,
-                color: "#E9E0FF",
+                color: "#D4537E",
                 fontWeight: 600,
                 letterSpacing: "0.05em",
                 lineHeight: 1,
@@ -637,7 +654,7 @@ function FavoritesOrbit({
               style={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(0,0,0,0.55)",
+                background: "rgba(255,255,255,0.7)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -648,8 +665,8 @@ function FavoritesOrbit({
                   width: 22,
                   height: 22,
                   borderRadius: "50%",
-                  border: "2px solid rgba(255,255,255,0.2)",
-                  borderTopColor: "rgba(255,255,255,0.85)",
+                  border: "2px solid #E5E5E5",
+                  borderTopColor: "#D4537E",
                   animation: "spin 0.8s linear infinite",
                 }}
               />
@@ -657,7 +674,7 @@ function FavoritesOrbit({
             </div>
           )}
         </motion.button>
-        {/* Edit badge — positioned on the wrapper so it stays put during the button's tap-scale animation */}
+        {/* Edit badge */}
         <span
           style={{
             position: "absolute",
@@ -666,15 +683,16 @@ function FavoritesOrbit({
             width: 30,
             height: 30,
             borderRadius: "50%",
-            background: "#A78BFA",
+            background: "#D4537E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            border: "2px solid #0D0D0F",
+            border: "2px solid #FAFAFA",
             fontSize: 13,
-            color: "#0D0D0F",
+            color: "#FFFFFF",
             pointerEvents: "none",
             lineHeight: 1,
+            boxShadow: "0 2px 8px rgba(212,83,126,0.4)",
           }}
         >
           ✎
@@ -700,14 +718,14 @@ function FavoriteSlot({
         style={{
           width: "100%",
           height: "100%",
-          background: "rgba(255,255,255,0.03)",
-          border: "1px dashed rgba(255,255,255,0.1)",
+          background: "#F8F6FC",
+          border: "1px dashed rgba(212,83,126,0.18)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.15)" }}>♡</span>
+        <span style={{ fontSize: 12, color: "rgba(212,83,126,0.3)" }}>♡</span>
       </div>
     );
   }
@@ -718,7 +736,7 @@ function FavoriteSlot({
         width: "100%",
         height: "100%",
         position: "relative",
-        overflow: "visible", // allow ✕ to overflow slightly
+        overflow: "visible",
         cursor: onNavigate ? "pointer" : "default",
       }}
     >
@@ -736,9 +754,9 @@ function FavoriteSlot({
           padding: 0,
           borderRadius: "50%",
           overflow: "hidden",
-          border: "1.5px solid rgba(167,139,250,0.28)",
-          background: "rgba(255,255,255,0.04)",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+          border: "1.5px solid rgba(212,83,126,0.28)",
+          background: "#FFFFFF",
+          boxShadow: "0 4px 14px rgba(0,0,0,0.10)",
           cursor: onNavigate ? "pointer" : "default",
         }}
       >
@@ -760,14 +778,14 @@ function FavoriteSlot({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: "linear-gradient(135deg, rgba(167,139,250,0.16), rgba(167,139,250,0.05))",
+              background: "#FFF0F6",
             }}
           >
             <span style={{ fontSize: 16, opacity: 0.4 }}>🖼️</span>
           </div>
         )}
       </button>
-      {/* Remove (✕) — small chip in the corner, on top of the photo button */}
+      {/* Remove (✕) */}
       {onRemove && (
         <motion.button
           whileTap={{ scale: 0.85 }}
@@ -783,18 +801,18 @@ function FavoriteSlot({
             width: 22,
             height: 22,
             borderRadius: "50%",
-            background: "rgba(13,13,15,0.92)",
-            border: "1.5px solid rgba(248,113,113,0.55)",
+            background: "#FFFFFF",
+            border: "1.5px solid rgba(212,83,126,0.55)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "rgba(248,113,113,0.95)",
+            color: "#D4537E",
             fontSize: 12,
             lineHeight: 1,
             cursor: "pointer",
             padding: 0,
             zIndex: 2,
-            boxShadow: "0 2px 6px rgba(0,0,0,0.5)",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
           }}
         >
           ✕
@@ -805,7 +823,7 @@ function FavoriteSlot({
 }
 
 function Divider() {
-  return <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />;
+  return <div style={{ height: "0.5px", background: "#E5E5E5" }} />;
 }
 
 function FieldRow({
@@ -827,15 +845,13 @@ function FieldRow({
       className="w-full flex items-center justify-between px-4 py-3.5"
       style={{ background: "none", border: "none", cursor: "pointer" }}
     >
-      <span
-        style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", letterSpacing: "0.04em" }}
-      >
+      <span style={{ fontSize: 12, color: "#6C757D", letterSpacing: "0.04em" }}>
         {label}
       </span>
       <span
         style={{
           fontSize: 13,
-          color: empty ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.85)",
+          color: empty ? "#9CA3AF" : "#1F2937",
           fontStyle: empty ? "italic" : "normal",
         }}
       >
@@ -879,7 +895,7 @@ function EditModal({
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.6)",
+          background: "rgba(0,0,0,0.4)",
           zIndex: 100,
           backdropFilter: "blur(4px)",
         }}
@@ -895,14 +911,16 @@ function EditModal({
           left: 0,
           right: 0,
           zIndex: 101,
-          background: "#141416",
-          border: "1px solid rgba(255,255,255,0.10)",
+          background: "#FFFFFF",
+          border: "0.5px solid rgba(0,0,0,0.08)",
+          borderBottom: "none",
           borderRadius: "24px 24px 0 0",
           padding: "24px 24px 40px",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.10)",
         }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "0 auto 20px" }} />
-        <p className="text-base font-semibold silver-text mb-4">
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E5E5E5", margin: "0 auto 20px" }} />
+        <p className="text-base font-semibold mb-4" style={{ color: "#1F2937" }}>
           {FIELD_LABELS[field]}
         </p>
         <input
@@ -913,9 +931,9 @@ function EditModal({
           placeholder={FIELD_LABELS[field]}
           className="w-full rounded-xl px-4 py-3"
           style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            color: "#E0E0E8",
+            background: "rgba(0,0,0,0.03)",
+            border: "0.5px solid rgba(0,0,0,0.12)",
+            color: "#1F2937",
             fontSize: 15,
             outline: "none",
           }}
@@ -925,9 +943,9 @@ function EditModal({
             onClick={onCancel}
             className="flex-1 rounded-xl py-3"
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "rgba(255,255,255,0.5)",
+              background: "rgba(0,0,0,0.04)",
+              border: "0.5px solid #E5E5E5",
+              color: "#6C757D",
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -940,12 +958,13 @@ function EditModal({
             disabled={saving}
             className="flex-1 rounded-xl py-3"
             style={{
-              background: "linear-gradient(135deg, rgba(167,139,250,0.25), rgba(167,139,250,0.10))",
-              border: "1px solid rgba(167,139,250,0.35)",
-              color: "#C4B5FD",
+              background: saving ? "rgba(0,0,0,0.04)" : "#D4537E",
+              border: "none",
+              color: saving ? "#9CA3AF" : "#FFFFFF",
               fontSize: 13,
               fontWeight: 600,
               cursor: saving ? "not-allowed" : "pointer",
+              boxShadow: saving ? "none" : "0 4px 14px rgba(212,83,126,0.35)",
             }}
           >
             {saving ? "保存中..." : "保存"}

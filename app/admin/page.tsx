@@ -66,8 +66,8 @@ export default function AdminPage() {
 
   if (user === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAFA" }}>
+        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #E5E5E5", borderTopColor: "#D4537E", animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -154,20 +154,20 @@ export default function AdminPage() {
 
   if (!authed) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen px-6" style={{ background: "#0D0D0F" }}>
+      <div className="flex flex-col items-center justify-center min-h-screen px-6" style={{ background: "#FAFAFA" }}>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-sm"
         >
-          <h1 className="text-2xl font-bold tracking-widest silver-text text-center mb-1">UniMo</h1>
-          <p className="text-xs text-center mb-8" style={{ color: "rgba(255,255,255,0.3)" }}>管理者ページ</p>
+          <h1 className="text-2xl font-bold tracking-widest text-center mb-1" style={{ color: "#1F2937" }}>UniMo</h1>
+          <p className="text-xs text-center mb-8" style={{ color: "#9CA3AF" }}>管理者ページ</p>
 
           <form
             onSubmit={handleLogin}
-            className="glass rounded-3xl p-6 flex flex-col gap-3"
-            style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+            className="rounded-3xl p-6 flex flex-col gap-3"
+            style={{ background: "#FFFFFF", border: "0.5px solid #E5E5E5", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
           >
             <input
               type="password"
@@ -176,14 +176,14 @@ export default function AdminPage() {
               placeholder="パスワード"
               autoFocus
               className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "var(--silver-bright)" }}
+              style={{ background: "rgba(0,0,0,0.03)", border: "0.5px solid rgba(0,0,0,0.12)", color: "#1F2937" }}
             />
-            {pwError && <p className="text-xs px-1" style={{ color: "rgba(248,113,113,0.8)" }}>{pwError}</p>}
+            {pwError && <p className="text-xs px-1" style={{ color: "#EF4444" }}>{pwError}</p>}
             <motion.button
               type="submit"
               whileTap={{ scale: 0.96 }}
               className="w-full rounded-xl py-3 text-sm font-medium"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "var(--silver-bright)", cursor: "pointer" }}
+              style={{ background: "#D4537E", border: "none", color: "#FFFFFF", cursor: "pointer", boxShadow: "0 4px 14px rgba(212,83,126,0.35)" }}
             >
               入室する
             </motion.button>
@@ -194,14 +194,22 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#0D0D0F" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#FAFAFA" }}>
       {/* Header */}
-      <div className="px-5 pt-12 pb-4">
-        <h1 className="text-xl font-bold tracking-widest silver-text">管理者画面</h1>
-        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.3)" }}>サークルの作成・招待コード管理</p>
+      <div
+        className="px-5 pt-12 pb-4"
+        style={{
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
+        }}
+      >
+        <h1 className="text-xl font-bold tracking-widest" style={{ color: "#1F2937" }}>管理者画面</h1>
+        <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>サークルの作成・招待コード管理</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-10 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-10 pt-4 flex flex-col gap-6">
 
         {/* Generated code display */}
         <AnimatePresence>
@@ -211,26 +219,30 @@ export default function AdminPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.94 }}
               transition={{ duration: 0.4 }}
-              className="glass rounded-2xl p-6 flex flex-col items-center"
-              style={{ border: "1px solid rgba(167,139,250,0.35)" }}
+              className="rounded-2xl p-6 flex flex-col items-center"
+              style={{
+                background: "#FFF0F6",
+                border: "1px solid rgba(212,83,126,0.25)",
+                boxShadow: "0 4px 16px rgba(212,83,126,0.10)",
+              }}
             >
-              <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs mb-1" style={{ color: "#6C757D" }}>
                 「{generatedCode.circleName}」の招待コード
               </p>
               <p
                 className="text-5xl font-bold my-4"
-                style={{ color: "#A78BFA", letterSpacing: "0.22em" }}
+                style={{ color: "#D4537E", letterSpacing: "0.22em" }}
               >
                 {generatedCode.code}
               </p>
-              <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <p className="text-xs text-center" style={{ color: "#9CA3AF" }}>
                 このコードをメンバーに伝えてください
               </p>
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setGeneratedCode(null)}
                 className="mt-4 text-xs px-4 py-1.5 rounded-full"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+                style={{ background: "#FFFFFF", border: "0.5px solid #E5E5E5", color: "#6C757D", cursor: "pointer" }}
               >
                 閉じる
               </motion.button>
@@ -239,19 +251,22 @@ export default function AdminPage() {
         </AnimatePresence>
 
         {/* Create circle form */}
-        <div className="glass rounded-2xl p-5" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-sm font-semibold silver-text mb-4">サークルを作成</p>
+        <div
+          className="rounded-2xl p-5"
+          style={{ background: "#FFFFFF", border: "0.5px solid #E5E5E5", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+        >
+          <p className="text-sm font-semibold mb-4" style={{ color: "#1F2937" }}>サークルを作成</p>
 
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
 
             {/* Icon image upload */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>アイコン画像（任意）</p>
+              <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>アイコン画像（任意）</p>
               <div className="flex items-center gap-3">
                 <div
                   onClick={() => iconInputRef.current?.click()}
                   className="rounded-2xl overflow-hidden cursor-pointer flex items-center justify-center flex-shrink-0"
-                  style={{ width: 64, height: 64, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)" }}
+                  style={{ width: 64, height: 64, background: "#F1EFE8", border: "0.5px solid #E5E5E5" }}
                 >
                   <input ref={iconInputRef} type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; setIconFile(f); setIconPreview(URL.createObjectURL(f)); }} style={{ display: "none" }} />
                   {iconPreview ? (
@@ -261,7 +276,7 @@ export default function AdminPage() {
                     <span style={{ fontSize: 28 }}>📷</span>
                   )}
                 </div>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                <p className="text-xs" style={{ color: "#9CA3AF" }}>
                   {iconPreview ? "タップして変更" : "タップして画像を選択\n未設定の場合は絵文字が使われます"}
                 </p>
               </div>
@@ -269,7 +284,7 @@ export default function AdminPage() {
 
             {/* Emoji */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>絵文字（画像未設定時）</p>
+              <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>絵文字（画像未設定時）</p>
               <div className="grid grid-cols-8 gap-1.5">
                 {EMOJIS.map((e) => (
                   <motion.button
@@ -278,8 +293,8 @@ export default function AdminPage() {
                     className="rounded-xl flex items-center justify-center"
                     style={{
                       height: 36, fontSize: 18, cursor: "pointer",
-                      background: emoji === e ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-                      border: emoji === e ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                      background: emoji === e ? "#FFF0F6" : "rgba(0,0,0,0.03)",
+                      border: emoji === e ? "1px solid rgba(212,83,126,0.4)" : "0.5px solid #E5E5E5",
                       transition: "all 0.15s ease",
                     }}
                   >
@@ -291,18 +306,18 @@ export default function AdminPage() {
 
             {/* Name */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>サークル名 *</p>
+              <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>サークル名 *</p>
               <input
                 type="text" value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="例：写真部" maxLength={40} required
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "var(--silver-bright)" }}
+                style={{ background: "rgba(0,0,0,0.03)", border: "0.5px solid rgba(0,0,0,0.12)", color: "#1F2937" }}
               />
             </div>
 
             {/* Category */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>カテゴリ</p>
+              <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>カテゴリ</p>
               <div className="flex gap-2 flex-wrap">
                 {CATEGORIES.map((cat) => (
                   <motion.button
@@ -310,10 +325,11 @@ export default function AdminPage() {
                     onClick={() => setCategory(cat)}
                     className="rounded-full px-3 py-1.5 text-xs"
                     style={{
-                      background: category === cat ? "rgba(167,139,250,0.15)" : "rgba(255,255,255,0.04)",
-                      border: category === cat ? "1px solid rgba(167,139,250,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                      color: category === cat ? "#A78BFA" : "rgba(255,255,255,0.4)",
+                      background: category === cat ? "#FFF0F6" : "rgba(0,0,0,0.03)",
+                      border: category === cat ? "1px solid rgba(212,83,126,0.4)" : "0.5px solid #E5E5E5",
+                      color: category === cat ? "#D4537E" : "#6C757D",
                       cursor: "pointer", transition: "all 0.15s ease",
+                      fontWeight: category === cat ? 600 : 400,
                     }}
                   >
                     {cat}
@@ -324,19 +340,19 @@ export default function AdminPage() {
 
             {/* Description */}
             <div>
-              <p className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>説明文（任意）</p>
+              <p className="text-xs mb-2" style={{ color: "#6C757D", letterSpacing: "0.06em" }}>説明文（任意）</p>
               <textarea
                 value={description} onChange={(e) => setDescription(e.target.value)}
                 placeholder="活動内容を一言で..." rows={2} maxLength={200}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "var(--silver-bright)" }}
+                style={{ background: "rgba(0,0,0,0.03)", border: "0.5px solid rgba(0,0,0,0.12)", color: "#1F2937" }}
               />
             </div>
 
             <AnimatePresence>
               {error && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="text-xs px-1" style={{ color: "rgba(248,113,113,0.8)" }}>
+                  className="text-xs px-1" style={{ color: "#EF4444" }}>
                   {error}
                 </motion.p>
               )}
@@ -346,11 +362,12 @@ export default function AdminPage() {
               type="submit" disabled={!name.trim() || loading} whileTap={{ scale: 0.97 }}
               className="w-full rounded-xl py-3 text-sm font-medium"
               style={{
-                background: !name.trim() || loading ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.10))",
-                border: "1px solid rgba(167,139,250,0.25)",
-                color: !name.trim() || loading ? "rgba(255,255,255,0.2)" : "#C4B5FD",
+                background: !name.trim() || loading ? "rgba(0,0,0,0.04)" : "#D4537E",
+                border: !name.trim() || loading ? "0.5px solid #E5E5E5" : "none",
+                color: !name.trim() || loading ? "#9CA3AF" : "#FFFFFF",
                 cursor: !name.trim() || loading ? "not-allowed" : "pointer",
                 letterSpacing: "0.03em", transition: "all 0.25s ease",
+                boxShadow: !name.trim() || loading ? "none" : "0 4px 14px rgba(212,83,126,0.35)",
               }}
             >
               {loading ? "作成中..." : `${emoji} 作成して招待コードを発行`}
@@ -361,27 +378,27 @@ export default function AdminPage() {
         {/* Existing circles */}
         {circles.length > 0 && (
           <div>
-            <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em" }}>
+            <p className="text-xs mb-3" style={{ color: "#9CA3AF", letterSpacing: "0.08em" }}>
               登録済みサークル ({circles.length}件)
             </p>
             <div className="flex flex-col gap-2">
               {circles.map((c) => (
                 <div
                   key={c.id}
-                  className="glass rounded-xl px-4 py-3 flex items-center justify-between"
-                  style={{ border: "1px solid rgba(255,255,255,0.07)" }}
+                  className="rounded-xl px-4 py-3 flex items-center justify-between"
+                  style={{ background: "#FFFFFF", border: "0.5px solid #E5E5E5", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span style={{ fontSize: 22, flexShrink: 0 }}>{c.emoji}</span>
                     <div className="min-w-0">
-                      <p className="text-sm truncate" style={{ color: "var(--silver-bright)" }}>{c.name}</p>
-                      {c.category && <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>{c.category}</p>}
+                      <p className="text-sm truncate" style={{ color: "#1F2937" }}>{c.name}</p>
+                      {c.category && <p className="text-xs" style={{ color: "#9CA3AF" }}>{c.category}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0 ml-3">
                     <div className="text-right">
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>招待コード</p>
-                      <p className="text-base font-bold" style={{ color: "#A78BFA", letterSpacing: "0.18em" }}>
+                      <p className="text-xs" style={{ color: "#9CA3AF" }}>招待コード</p>
+                      <p className="text-base font-bold" style={{ color: "#D4537E", letterSpacing: "0.18em" }}>
                         {c.invite_code ?? "—"}
                       </p>
                     </div>
@@ -391,14 +408,14 @@ export default function AdminPage() {
                           whileTap={{ scale: 0.92 }}
                           onClick={() => handleDelete(c.id)}
                           disabled={deletingId === c.id}
-                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(248,113,113,0.18)", border: "1px solid rgba(248,113,113,0.4)", color: "rgba(248,113,113,0.9)", cursor: "pointer" }}
+                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", cursor: "pointer" }}
                         >
                           {deletingId === c.id ? "…" : "削除"}
                         </motion.button>
                         <motion.button
                           whileTap={{ scale: 0.92 }}
                           onClick={() => setConfirmId(null)}
-                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}
+                          style={{ fontSize: 11, padding: "4px 8px", borderRadius: 8, background: "rgba(0,0,0,0.04)", border: "0.5px solid #E5E5E5", color: "#6C757D", cursor: "pointer" }}
                         >
                           戻る
                         </motion.button>
@@ -407,9 +424,9 @@ export default function AdminPage() {
                       <motion.button
                         whileTap={{ scale: 0.88 }}
                         onClick={() => setConfirmId(c.id)}
-                        style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(0,0,0,0.03)", border: "0.5px solid #E5E5E5", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                       >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(248,113,113,0.6)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(239,68,68,0.6)" strokeWidth="2" style={{ pointerEvents: "none" }}>
                           <polyline points="3 6 5 6 21 6" />
                           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                           <path d="M10 11v6M14 11v6" />

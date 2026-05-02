@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0D0D0F",
+  themeColor: "#FAFAFA",
 };
 
 export default function RootLayout({
@@ -44,7 +44,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="min-h-full flex flex-col" style={{ background: "#0D0D0F" }}>
+      <body className="min-h-full flex flex-col" style={{ background: "#FAFAFA" }}>
         {children}
       </body>
     </html>

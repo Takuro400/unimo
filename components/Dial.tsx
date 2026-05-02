@@ -161,58 +161,61 @@ export default function Dial({
           height: size,
           position: "relative",
           touchAction: "none",
-          // 外側の立体的な影
-          filter: "drop-shadow(0 12px 32px rgba(0,0,0,0.7)) drop-shadow(0 4px 12px rgba(167,139,250,0.12))",
+          /* ライトテーマの立体感 */
+          filter: [
+            "drop-shadow(0 8px 24px rgba(0,0,0,0.12))",
+            "drop-shadow(0 2px 8px rgba(212,83,126,0.08))",
+          ].join(" "),
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* ベースリング — 立体的な縁 */}
+        {/* ── ベースリング ── */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             borderRadius: "50%",
-            background: "radial-gradient(ellipse at 40% 35%, rgba(80,70,100,0.55) 0%, rgba(18,16,24,0.95) 65%)",
+            background: "radial-gradient(ellipse at 38% 32%, #FFFFFF 0%, #F0EEF5 60%, #E8E4F0 100%)",
             boxShadow: [
-              "inset 0 2px 6px rgba(255,255,255,0.10)",   // 上ハイライト
-              "inset 0 -3px 10px rgba(0,0,0,0.7)",         // 下シャドウ
-              "inset 0 0 40px rgba(0,0,0,0.5)",            // 全体の深み
-              "0 0 0 1.5px rgba(255,255,255,0.07)",         // 外縁
+              "inset 0 2px 6px rgba(255,255,255,0.90)",
+              "inset 0 -3px 10px rgba(0,0,0,0.08)",
+              "inset 0 0 30px rgba(0,0,0,0.04)",
+              "0 0 0 1px rgba(0,0,0,0.06)",
             ].join(", "),
           }}
         />
 
-        {/* トラックリング */}
+        {/* ── トラックリング ── */}
         <div
           style={{
             position: "absolute",
             inset: size * 0.09,
             borderRadius: "50%",
-            background: "radial-gradient(ellipse at 40% 30%, rgba(60,50,85,0.6) 0%, rgba(10,9,14,0.9) 70%)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "radial-gradient(ellipse at 38% 30%, #FAFAFA 0%, #F3F1F8 70%)",
+            border: "0.5px solid rgba(0,0,0,0.08)",
             boxShadow: [
-              "inset 0 3px 8px rgba(0,0,0,0.8)",
-              "inset 0 -1px 4px rgba(167,139,250,0.06)",
-              "0 1px 2px rgba(255,255,255,0.06)",
+              "inset 0 3px 8px rgba(0,0,0,0.06)",
+              "inset 0 -1px 4px rgba(212,83,126,0.04)",
+              "0 1px 2px rgba(255,255,255,0.9)",
             ].join(", "),
           }}
         />
 
-        {/* 上部ハイライトアーク（12時方向の光） */}
+        {/* ── 上ハイライトアーク ── */}
         <div
           style={{
             position: "absolute",
             inset: size * 0.09,
             borderRadius: "50%",
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 35%)",
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.65) 0%, transparent 35%)",
             pointerEvents: "none",
           }}
         />
 
-        {/* 回転レイヤー — 目盛り＋ドット */}
+        {/* ── 回転レイヤー（目盛り＋ドット） ── */}
         <div
           style={{
             position: "absolute",
@@ -227,10 +230,10 @@ export default function Dial({
             const isMajor = isDense ? i % 5 === 0 : i % 3 === 0;
             const hasContent = activeIndices?.has(i) ?? false;
 
-            // 立体感：上（0°）が最も明るく、横・下に向かって暗くなる
+            /* 12時方向が最も明るく、横・下に向かって淡くなる立体感 */
             const effectiveDeg = ((i * snapAngle + rotation) % 360 + 360) % 360;
             const fromTop = effectiveDeg > 180 ? effectiveDeg - 360 : effectiveDeg;
-            const perspective = Math.max(0.04, Math.cos((fromTop * Math.PI) / 180));
+            const perspective = Math.max(0.06, Math.cos((fromTop * Math.PI) / 180));
             const perspectiveOpacity = isSelected ? 1 : Math.min(1, perspective * 1.1);
 
             const markerLen = isMajor ? (isDense ? 16 : 22) : isSelected ? 16 : isDense ? 7 : 13;
@@ -238,6 +241,7 @@ export default function Dial({
 
             return (
               <React.Fragment key={i}>
+                {/* 目盛り */}
                 <div
                   style={{
                     position: "absolute",
@@ -249,17 +253,18 @@ export default function Dial({
                     marginTop: -markerLen / 2,
                     transform: `rotate(${angle}deg) translateY(-${ringRadius - markerLen / 2}px)`,
                     background: isSelected
-                      ? "linear-gradient(to bottom, #D4BBFF, #A78BFA)"
+                      ? "linear-gradient(to bottom, #E8728E, #D4537E)"
                       : isMajor
-                      ? `rgba(210,210,225,${0.75 * perspectiveOpacity})`
-                      : `rgba(200,200,220,${0.35 * perspectiveOpacity})`,
+                      ? `rgba(100,80,120,${0.55 * perspectiveOpacity})`
+                      : `rgba(130,110,150,${0.28 * perspectiveOpacity})`,
                     borderRadius: 2,
                     boxShadow: isSelected
-                      ? "0 0 10px rgba(167,139,250,1), 0 0 20px rgba(167,139,250,0.5)"
+                      ? "0 0 8px rgba(212,83,126,0.8), 0 0 16px rgba(212,83,126,0.3)"
                       : "none",
                     transition: "background 0.25s ease, box-shadow 0.25s ease",
                   }}
                 />
+                {/* アクティブドット */}
                 {hasContent && (
                   <div
                     style={{
@@ -272,8 +277,8 @@ export default function Dial({
                       marginTop: -2.5,
                       borderRadius: "50%",
                       transform: `rotate(${angle}deg) translateY(-${dotRadius}px)`,
-                      background: isSelected ? "#C4B5FD" : `rgba(167,139,250,${0.55 * perspectiveOpacity})`,
-                      boxShadow: isSelected ? "0 0 8px rgba(167,139,250,1)" : "none",
+                      background: isSelected ? "#D4537E" : `rgba(212,83,126,${0.45 * perspectiveOpacity})`,
+                      boxShadow: isSelected ? "0 0 6px rgba(212,83,126,0.9)" : "none",
                       transition: "background 0.25s ease",
                     }}
                   />
@@ -283,7 +288,7 @@ export default function Dial({
           })}
         </div>
 
-        {/* 選択ポインター（12時の固定マーカー） */}
+        {/* ── 選択ポインター（12時固定） ── */}
         <div
           style={{
             position: "absolute",
@@ -293,25 +298,25 @@ export default function Dial({
             width: 3,
             height: 18,
             borderRadius: 2,
-            background: "linear-gradient(to bottom, rgba(196,181,253,0.95), rgba(167,139,250,0.4))",
-            boxShadow: "0 0 10px rgba(167,139,250,0.8)",
+            background: "linear-gradient(to bottom, rgba(212,83,126,0.95), rgba(212,83,126,0.4))",
+            boxShadow: "0 0 10px rgba(212,83,126,0.7)",
             pointerEvents: "none",
             zIndex: 10,
           }}
         />
 
-        {/* センター表示 */}
+        {/* ── センター ── */}
         <div
           style={{
             position: "absolute",
             inset: "22%",
             borderRadius: "50%",
-            background: "radial-gradient(ellipse at 40% 30%, rgba(45,38,65,0.95) 0%, rgba(12,10,18,0.98) 80%)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "radial-gradient(ellipse at 38% 30%, #FFFFFF 0%, #F8F5FC 80%)",
+            border: "0.5px solid rgba(0,0,0,0.07)",
             boxShadow: [
-              "inset 0 4px 12px rgba(0,0,0,0.9)",
-              "inset 0 -1px 4px rgba(167,139,250,0.08)",
-              "0 2px 4px rgba(255,255,255,0.05)",
+              "inset 0 4px 12px rgba(0,0,0,0.06)",
+              "inset 0 -1px 4px rgba(212,83,126,0.06)",
+              "0 2px 4px rgba(255,255,255,0.9)",
             ].join(", "),
             display: "flex",
             flexDirection: "column",
@@ -319,36 +324,33 @@ export default function Dial({
             justifyContent: "center",
           }}
         >
-          {/* センター上部ハイライト */}
+          {/* センターハイライト */}
           <div style={{
             position: "absolute",
             inset: 0,
             borderRadius: "50%",
-            background: "linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 40%)",
+            background: "linear-gradient(to bottom, rgba(255,255,255,0.6) 0%, transparent 40%)",
             pointerEvents: "none",
           }} />
           {centerOverride ?? (
             <>
               <span
                 style={{
-                  fontSize: 24,
-                  fontWeight: 300,
-                  letterSpacing: "0.04em",
-                  background: "linear-gradient(135deg, #D0D0DC 0%, #F0F0F8 45%, #A8A8B8 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  textShadow: "none",
+                  fontSize: 22,
+                  fontWeight: 600,
+                  color: "#1F2937",
+                  letterSpacing: "0.03em",
                 }}
               >
                 {items[selectedIndex]}
               </span>
               <div
                 style={{
-                  width: 22,
-                  height: 1,
+                  width: 20,
+                  height: 1.5,
                   marginTop: 6,
-                  background: "linear-gradient(to right, transparent, rgba(167,139,250,0.6), transparent)",
+                  background: "linear-gradient(to right, transparent, rgba(212,83,126,0.5), transparent)",
+                  borderRadius: 1,
                 }}
               />
             </>

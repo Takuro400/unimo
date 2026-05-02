@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
-  // On first mount, pre-fill last used email so returning users don't have to retype
   useEffect(() => {
     try {
       const remembered = localStorage.getItem(LAST_EMAIL_KEY);
@@ -30,8 +29,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  // If user becomes logged in while on this page (e.g. verifyOtp succeeded, or session existed),
-  // redirect to home immediately.
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) return;
     let cancelled = false;
@@ -70,7 +67,6 @@ export default function LoginPage() {
       email: targetEmail,
       options: {
         shouldCreateUser: true,
-        // emailRedirectTo is still helpful as a fallback if the user *does* click the link in email.
         emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
       },
     });
@@ -93,7 +89,6 @@ export default function LoginPage() {
       setEmail(trimmed);
       setCode("");
       setStep("code");
-      // Focus the code input after the step transition settles
       setTimeout(() => codeInputRef.current?.focus(), 400);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -122,7 +117,6 @@ export default function LoginPage() {
         });
         if (vErr) throw vErr;
       }
-      // Remember email for next time (only after a confirmed login)
       try {
         localStorage.setItem(LAST_EMAIL_KEY, email);
       } catch {
@@ -154,7 +148,7 @@ export default function LoginPage() {
   return (
     <div
       className="flex flex-col min-h-screen items-center justify-center px-6"
-      style={{ background: "#0D0D0F" }}
+      style={{ background: "#FAFAFA" }}
     >
       {/* Logo */}
       <motion.div
@@ -163,8 +157,13 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-bold tracking-widest silver-text mb-2">UniMo</h1>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em" }}>
+        <h1
+          className="text-4xl font-bold tracking-widest mb-2"
+          style={{ color: "#1F2937" }}
+        >
+          UniMo
+        </h1>
+        <p style={{ fontSize: 12, color: "#9CA3AF", letterSpacing: "0.1em" }}>
           サークル活動の記録
         </p>
       </motion.div>
@@ -180,16 +179,20 @@ export default function LoginPage() {
             className="w-full max-w-sm"
           >
             <div
-              className="glass rounded-3xl p-6"
-              style={{ border: "1px solid rgba(255,255,255,0.10)" }}
+              className="rounded-3xl p-6"
+              style={{
+                background: "#FFFFFF",
+                border: "0.5px solid #E5E5E5",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              }}
             >
               <p
                 className="text-sm font-medium mb-1"
-                style={{ color: "var(--silver-bright)", letterSpacing: "0.03em" }}
+                style={{ color: "#1F2937", letterSpacing: "0.03em" }}
               >
                 大学メールでログイン
               </p>
-              <p className="text-xs mb-5" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <p className="text-xs mb-5" style={{ color: "#9CA3AF" }}>
                 @mail.kyutech.jp / @seinan-jo.ac.jp のアドレスが必要です
               </p>
 
@@ -204,9 +207,9 @@ export default function LoginPage() {
                   inputMode="email"
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none"
                   style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "var(--silver-bright)",
+                    background: "rgba(0,0,0,0.03)",
+                    border: "0.5px solid rgba(0,0,0,0.12)",
+                    color: "#1F2937",
                     letterSpacing: "0.02em",
                   }}
                 />
@@ -218,7 +221,7 @@ export default function LoginPage() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       className="text-xs px-1"
-                      style={{ color: "rgba(248,113,113,0.85)" }}
+                      style={{ color: "#EF4444" }}
                     >
                       {error}
                     </motion.p>
@@ -231,14 +234,21 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.96 }}
                   className="w-full rounded-xl py-3 text-sm font-medium"
                   style={{
-                    background: loading || !email
-                      ? "rgba(255,255,255,0.05)"
-                      : "linear-gradient(135deg, rgba(192,192,208,0.18), rgba(140,140,160,0.10))",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: loading || !email ? "rgba(255,255,255,0.25)" : "var(--silver-bright)",
+                    background:
+                      loading || !email
+                        ? "rgba(0,0,0,0.04)"
+                        : "#D4537E",
+                    border: loading || !email
+                      ? "0.5px solid rgba(0,0,0,0.08)"
+                      : "none",
+                    color: loading || !email ? "#9CA3AF" : "#FFFFFF",
                     cursor: loading || !email ? "not-allowed" : "pointer",
                     letterSpacing: "0.05em",
                     transition: "all 0.3s ease",
+                    boxShadow:
+                      loading || !email
+                        ? "none"
+                        : "0 4px 14px rgba(212,83,126,0.35)",
                   }}
                 >
                   {loading ? "送信中..." : "認証コードを送る"}
@@ -246,7 +256,7 @@ export default function LoginPage() {
               </form>
             </div>
 
-            <p className="text-center text-xs mt-4" style={{ color: "rgba(255,255,255,0.2)" }}>
+            <p className="text-center text-xs mt-4" style={{ color: "#9CA3AF" }}>
               メールに届いた認証コードを次の画面で入力します（6〜8桁）
             </p>
           </motion.div>
@@ -260,22 +270,29 @@ export default function LoginPage() {
             className="w-full max-w-sm"
           >
             <div
-              className="glass rounded-3xl p-6"
-              style={{ border: "1px solid rgba(167,139,250,0.22)" }}
+              className="rounded-3xl p-6"
+              style={{
+                background: "#FFFFFF",
+                border: "0.5px solid #E5E5E5",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              }}
             >
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
-                style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)" }}
+                style={{
+                  background: "#FFF0F6",
+                  border: "1px solid rgba(212,83,126,0.2)",
+                }}
               >
                 <span style={{ fontSize: 22 }}>🔑</span>
               </div>
               <p
                 className="text-sm font-semibold mb-1"
-                style={{ color: "var(--silver-bright)", letterSpacing: "0.03em" }}
+                style={{ color: "#1F2937", letterSpacing: "0.03em" }}
               >
                 認証コードを入力
               </p>
-              <p className="text-xs mb-5 leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <p className="text-xs mb-5 leading-relaxed" style={{ color: "#6C757D" }}>
                 {email} 宛に認証コードを送りました。メールに届いた数字をそのまま入力してください。
               </p>
 
@@ -293,9 +310,9 @@ export default function LoginPage() {
                   maxLength={10}
                   className="w-full rounded-xl py-3 text-center outline-none"
                   style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(167,139,250,0.3)",
-                    color: "#C4B5FD",
+                    background: "rgba(0,0,0,0.03)",
+                    border: "0.5px solid rgba(212,83,126,0.3)",
+                    color: "#D4537E",
                     fontSize: 24,
                     fontWeight: 700,
                     letterSpacing: "0.35em",
@@ -310,7 +327,7 @@ export default function LoginPage() {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       className="text-xs px-1"
-                      style={{ color: "rgba(248,113,113,0.85)" }}
+                      style={{ color: "#EF4444" }}
                     >
                       {error}
                     </motion.p>
@@ -323,16 +340,22 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.96 }}
                   className="w-full rounded-xl py-3 text-sm font-medium"
                   style={{
-                    background: loading || code.length < 6
-                      ? "rgba(255,255,255,0.05)"
-                      : "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(167,139,250,0.10))",
-                    border: loading || code.length < 6
-                      ? "1px solid rgba(255,255,255,0.1)"
-                      : "1px solid rgba(167,139,250,0.38)",
-                    color: loading || code.length < 6 ? "rgba(255,255,255,0.25)" : "#C4B5FD",
+                    background:
+                      loading || code.length < 6
+                        ? "rgba(0,0,0,0.04)"
+                        : "#D4537E",
+                    border:
+                      loading || code.length < 6
+                        ? "0.5px solid rgba(0,0,0,0.08)"
+                        : "none",
+                    color: loading || code.length < 6 ? "#9CA3AF" : "#FFFFFF",
                     cursor: loading || code.length < 6 ? "not-allowed" : "pointer",
                     letterSpacing: "0.05em",
                     transition: "all 0.3s ease",
+                    boxShadow:
+                      loading || code.length < 6
+                        ? "none"
+                        : "0 4px 14px rgba(212,83,126,0.35)",
                   }}
                 >
                   {loading ? "確認中..." : "ログイン"}
@@ -348,7 +371,7 @@ export default function LoginPage() {
                   setError("");
                 }}
                 style={{
-                  color: "rgba(255,255,255,0.35)",
+                  color: "#9CA3AF",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
@@ -356,12 +379,12 @@ export default function LoginPage() {
               >
                 メールを変更
               </button>
-              <span style={{ color: "rgba(255,255,255,0.15)" }}>•</span>
+              <span style={{ color: "#E5E5E5" }}>•</span>
               <button
                 onClick={handleResend}
                 disabled={resending}
                 style={{
-                  color: resending ? "rgba(255,255,255,0.25)" : "rgba(196,181,253,0.75)",
+                  color: resending ? "#9CA3AF" : "#D4537E",
                   background: "none",
                   border: "none",
                   cursor: resending ? "not-allowed" : "pointer",

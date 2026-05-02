@@ -1,65 +1,100 @@
 @import "tailwindcss";
 
+/* ────────────────────────────────────────────
+   デザイントークン（ライトテーマ）
+──────────────────────────────────────────── */
 :root {
-  --background: #0D0D0F;
-  --foreground: #E8E8E8;
-  --silver: #C0C0C8;
-  --silver-bright: #E0E0E8;
-  --accent: #A78BFA;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --font-sans: var(--font-inter);
+  --bg:          #FAFAFA;
+  --surface:     #FFFFFF;
+  --border:      #E5E5E5;
+  --text-primary: #1F2937;
+  --text-sub:    #6C757D;
+  --text-muted:  #9CA3AF;
+  --accent:      #D4537E;
+  --accent-light: #FFF0F6;
+  --accent-mid:  rgba(212, 83, 126, 0.15);
+  --tag-bg:      #F1EFE8;
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
+  --font-sans:   var(--font-inter);
+
+  /* 後方互換（pages が参照している旧変数） */
+  --background:  #FAFAFA;
+  --foreground:  #1F2937;
+  --silver:      #6C757D;
+  --silver-bright: #1F2937;
+  --glass-bg:    #FFFFFF;
+  --glass-border: #E5E5E5;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ────────────────────────────────────────────
+   ベース
+──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text-primary);
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   min-height: 100%;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* スクロールバー */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: #E5E5E5;
   border-radius: 2px;
 }
 
+/* ────────────────────────────────────────────
+   ユーティリティクラス
+──────────────────────────────────────────── */
+
+/* glass → ライトカード */
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
+/* silver-text → 通常の濃いテキスト */
 .silver-text {
-  background: linear-gradient(135deg, #C0C0C8 0%, #E8E8F0 40%, #A0A0A8 70%, #D0D0D8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
+  /* 旧グラデーション定義を上書き */
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
 }
 
+/* 押したときのフィードバック */
 .btn-press {
   transition: all 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
 }
-.btn-press:active {
-  transform: scale(0.96);
-  box-shadow: none;
-}
-.btn-press:hover {
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.06);
-}
+.btn-press:active { transform: scale(0.96); }
 
-.smooth {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+.smooth { transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+/* ローディングスピナー（全体共通） */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* お気に入りボタンスピナー */
+@keyframes fav-spin { to { transform: rotate(360deg); } }
+
+/* ────────────────────────────────────────────
+   写真/動画フィード上のオーバーレイは暗いまま維持
+   （コンテンツ上のテキスト可読性のため）
+──────────────────────────────────────────── */
+.media-overlay-top {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.60) 0%, transparent 100%);
+}
+.media-overlay-bottom {
+  background: linear-gradient(to top, rgba(0,0,0,0.70) 0%, transparent 100%);
 }

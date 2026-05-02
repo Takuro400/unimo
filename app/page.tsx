@@ -72,7 +72,6 @@ export default function Home() {
   const [favLimitToast, setFavLimitToast] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, PosterProfile>>({});
 
-  // First-time welcome: prompt for nickname if not set
   useEffect(() => {
     if (!user) return;
     if (user.id === "dev-user") return;
@@ -96,7 +95,6 @@ export default function Home() {
           const enriched = (data as any[]).map((p) => ({ ...p, circle: p.circles }));
           setFeed(groupPostsByCircle(enriched));
 
-          // Fetch poster profiles for the displayed posts (graceful if table missing)
           const posterIds = Array.from(
             new Set(enriched.map((p) => p.posted_by).filter(Boolean) as string[])
           );
@@ -163,10 +161,8 @@ export default function Home() {
     if (!user || post.posted_by !== user.id) return;
     if (!window.confirm("この投稿を削除しますか?\n削除すると元に戻せません。")) return;
 
-    // Snapshot for revert
     const prevFeed = feed;
 
-    // Remove from feed (and drop circles that have no posts left)
     setFeed((items) =>
       items
         .map((item) => ({ ...item, posts: item.posts.filter((p) => p.id !== post.id) }))
@@ -201,16 +197,26 @@ export default function Home() {
 
   if (user === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAFA" }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: "2px solid #E5E5E5",
+            borderTopColor: "#D4537E",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
+    /* The feed itself is full-screen photos — background is covered by photo cards */
     <div style={{ background: "#0D0D0F", height: "100svh", overflow: "hidden", position: "relative" }}>
-      {/* Floating header */}
+      {/* Floating header — stays dark for readability over photos */}
       <div
         style={{
           position: "fixed",
@@ -224,7 +230,7 @@ export default function Home() {
         }}
       >
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-widest silver-text">UniMo</h1>
+          <h1 className="text-2xl font-bold tracking-widest" style={{ color: "#FFFFFF" }}>UniMo</h1>
           <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
             {user?.email?.split("@")[0]}
           </p>
@@ -234,7 +240,16 @@ export default function Home() {
       {/* Feed */}
       {dataLoading ? (
         <div className="flex items-center justify-center" style={{ height: "100svh" }}>
-          <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              border: "2px solid rgba(255,255,255,0.15)",
+              borderTopColor: "#D4537E",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : feed.length === 0 ? (
@@ -281,20 +296,23 @@ export default function Home() {
         </div>
       )}
 
-      {/* 参加する FAB — sits above the bottom nav */}
+      {/* 参加する FAB */}
       <div style={{ position: "fixed", bottom: 116, right: 20, zIndex: 55 }}>
         <motion.div
           whileTap={{ scale: 0.94 }}
           onClick={() => setShowJoinModal(true)}
-          className="glass rounded-2xl flex items-center gap-2 px-4 py-3 cursor-pointer"
+          className="rounded-2xl flex items-center gap-2 px-4 py-3 cursor-pointer"
           style={{
-            border: "1px solid rgba(167,139,250,0.3)",
-            background: "rgba(13,13,15,0.7)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            background: "rgba(255,255,255,0.95)",
+            border: "0.5px solid rgba(212,83,126,0.25)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.20)",
+            backdropFilter: "blur(12px)",
           }}
         >
-          <span style={{ fontSize: 14, color: "#A78BFA" }}>🔑</span>
-          <span style={{ fontSize: 13, color: "#C4B5FD", letterSpacing: "0.03em" }}>招待コードで参加</span>
+          <span style={{ fontSize: 14 }}>🔑</span>
+          <span style={{ fontSize: 13, color: "#D4537E", letterSpacing: "0.03em", fontWeight: 500 }}>
+            招待コードで参加
+          </span>
         </motion.div>
       </div>
 
@@ -336,12 +354,12 @@ export default function Home() {
               zIndex: 80,
               padding: "10px 18px",
               borderRadius: 12,
-              background: "rgba(20,20,22,0.95)",
-              border: "1px solid rgba(167,139,250,0.3)",
-              color: "rgba(196,181,253,0.9)",
+              background: "rgba(255,255,255,0.96)",
+              border: "0.5px solid rgba(212,83,126,0.2)",
+              color: "#6C757D",
               fontSize: 12,
               letterSpacing: "0.03em",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
               backdropFilter: "blur(12px)",
               whiteSpace: "nowrap",
             }}
@@ -389,12 +407,11 @@ function NicknameSetupModal({ onDone }: { onDone: () => void }) {
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.7)",
+          background: "rgba(0,0,0,0.5)",
           zIndex: 100,
           backdropFilter: "blur(6px)",
         }}
       />
-      {/* Outer wrapper handles centering so framer-motion's animate transforms don't overwrite it */}
       <div
         style={{
           position: "fixed",
@@ -407,94 +424,89 @@ function NicknameSetupModal({ onDone }: { onDone: () => void }) {
           pointerEvents: "none",
         }}
       >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ type: "spring", damping: 22, stiffness: 280 }}
-        style={{
-          width: "min(92vw, 380px)",
-          background: "#141416",
-          border: "1px solid rgba(167,139,250,0.22)",
-          borderRadius: 24,
-          padding: "32px 24px 24px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(167,139,250,0.08)",
-          pointerEvents: "auto",
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              margin: "0 auto 14px",
-              background: "linear-gradient(135deg, rgba(167,139,250,0.3), rgba(167,139,250,0.1))",
-              border: "1px solid rgba(167,139,250,0.3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 26,
-            }}
-          >
-            ✨
-          </div>
-          <p className="text-base font-semibold silver-text" style={{ letterSpacing: "0.05em" }}>
-            ニックネームを決めよう
-          </p>
-          <p className="text-xs mt-1.5" style={{ color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>
-            アプリ内で表示される名前です。<br />
-            あとからマイページで変えられます。
-          </p>
-        </div>
-        <input
-          autoFocus
-          type="text"
-          maxLength={20}
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          placeholder="例: たくろう"
-          className="w-full rounded-xl px-4 py-3"
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ type: "spring", damping: 22, stiffness: 280 }}
           style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            color: "#E0E0E8",
-            fontSize: 15,
-            outline: "none",
-            textAlign: "center",
-            letterSpacing: "0.05em",
-          }}
-        />
-        {error && (
-          <p className="text-xs mt-2 text-center" style={{ color: "rgba(248,113,113,0.85)" }}>
-            {error}
-          </p>
-        )}
-        <motion.button
-          whileTap={saving ? undefined : { scale: 0.97 }}
-          onClick={saving ? undefined : handleSave}
-          disabled={saving || !nickname.trim()}
-          className="mt-4 w-full rounded-xl py-3"
-          style={{
-            background:
-              saving || !nickname.trim()
-                ? "rgba(255,255,255,0.04)"
-                : "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
-            border:
-              saving || !nickname.trim()
-                ? "1px solid rgba(255,255,255,0.08)"
-                : "1px solid rgba(167,139,250,0.38)",
-            color: saving || !nickname.trim() ? "rgba(255,255,255,0.3)" : "#C4B5FD",
-            fontSize: 13,
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-            cursor: saving || !nickname.trim() ? "not-allowed" : "pointer",
-            transition: "all 0.25s ease",
+            width: "min(92vw, 380px)",
+            background: "#FFFFFF",
+            border: "0.5px solid rgba(0,0,0,0.08)",
+            borderRadius: 24,
+            padding: "32px 24px 24px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+            pointerEvents: "auto",
           }}
         >
-          {saving ? "保存中..." : "はじめる"}
-        </motion.button>
-      </motion.div>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                margin: "0 auto 14px",
+                background: "#FFF0F6",
+                border: "1px solid rgba(212,83,126,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 26,
+              }}
+            >
+              ✨
+            </div>
+            <p className="text-base font-semibold" style={{ color: "#1F2937", letterSpacing: "0.05em" }}>
+              ニックネームを決めよう
+            </p>
+            <p className="text-xs mt-1.5" style={{ color: "#9CA3AF", lineHeight: 1.6 }}>
+              アプリ内で表示される名前です。<br />
+              あとからマイページで変えられます。
+            </p>
+          </div>
+          <input
+            autoFocus
+            type="text"
+            maxLength={20}
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            placeholder="例: たくろう"
+            className="w-full rounded-xl px-4 py-3"
+            style={{
+              background: "rgba(0,0,0,0.03)",
+              border: "0.5px solid rgba(0,0,0,0.12)",
+              color: "#1F2937",
+              fontSize: 15,
+              outline: "none",
+              textAlign: "center",
+              letterSpacing: "0.05em",
+            }}
+          />
+          {error && (
+            <p className="text-xs mt-2 text-center" style={{ color: "#EF4444" }}>
+              {error}
+            </p>
+          )}
+          <motion.button
+            whileTap={saving ? undefined : { scale: 0.97 }}
+            onClick={saving ? undefined : handleSave}
+            disabled={saving || !nickname.trim()}
+            className="mt-4 w-full rounded-xl py-3"
+            style={{
+              background: saving || !nickname.trim() ? "rgba(0,0,0,0.04)" : "#D4537E",
+              border: saving || !nickname.trim() ? "0.5px solid #E5E5E5" : "none",
+              color: saving || !nickname.trim() ? "#9CA3AF" : "#FFFFFF",
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              cursor: saving || !nickname.trim() ? "not-allowed" : "pointer",
+              transition: "all 0.25s ease",
+              boxShadow: saving || !nickname.trim() ? "none" : "0 4px 14px rgba(212,83,126,0.35)",
+            }}
+          >
+            {saving ? "保存中..." : "はじめる"}
+          </motion.button>
+        </motion.div>
       </div>
     </>
   );
@@ -597,9 +609,7 @@ function CircleCard({
   const animatingRef = useRef(false);
 
   const current = posts[idx];
-  // Right swipe = newer (idx + 1); it needs to appear from the left, so place at leftPercent: -100
   const newerPost = idx + 1 <= lastIdx ? posts[idx + 1] : null;
-  // Left swipe = older (idx - 1); appear from the right, leftPercent: +100
   const olderPost = idx - 1 >= 0 ? posts[idx - 1] : null;
 
   function getWidth() {
@@ -618,7 +628,6 @@ function CircleCard({
       animate(x, 0, { type: "spring", stiffness: 500, damping: 40 });
 
     if (swipe > threshold) {
-      // 右スワイプ = 新しい写真
       if (idx >= maxIdx) {
         springBack();
         onNavigate(circle.id);
@@ -635,7 +644,6 @@ function CircleCard({
         },
       });
     } else if (swipe < -threshold) {
-      // 左スワイプ = 昔の写真
       if (idx <= minIdx) {
         springBack();
         onNavigate(circle.id);
@@ -717,7 +725,7 @@ function CircleCard({
         )}
       </motion.div>
 
-      {/* Top overlay — circle name + progress dots */}
+      {/* Top overlay — circle name + progress dots (keep dark for readability over photos) */}
       <div
         style={{
           position: "absolute",
@@ -747,13 +755,21 @@ function CircleCard({
             {circle.name}
           </span>
           {circle.category && (
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: "rgba(167,139,250,0.25)", border: "1px solid rgba(167,139,250,0.4)", color: "#C4B5FD", letterSpacing: "0.04em" }}>
+            <span style={{
+              fontSize: 10,
+              padding: "2px 8px",
+              borderRadius: 999,
+              background: "rgba(212,83,126,0.30)",
+              border: "1px solid rgba(212,83,126,0.5)",
+              color: "#FFCCD8",
+              letterSpacing: "0.04em",
+            }}>
               {circle.category}
             </span>
           )}
         </div>
 
-        {/* Progress dots — 左=新しい / 右=古い(写真ストリップの並びに合わせる) */}
+        {/* Progress dots */}
         {maxIdx > minIdx && (
           <div style={{ display: "flex", gap: 4, marginTop: 12 }}>
             {Array.from({ length: maxIdx - minIdx + 1 }).map((_, i) => {
@@ -776,7 +792,7 @@ function CircleCard({
         )}
       </div>
 
-      {/* Bottom overlay — caption (left side only; right side is reserved for poster chip) */}
+      {/* Bottom overlay — caption */}
       {current?.caption && (
         <div
           style={{
@@ -796,10 +812,7 @@ function CircleCard({
         </div>
       )}
 
-      {/* Poster chip — bottom-right.
-          If the post is by the current user, use their user_metadata directly
-          (so the user's own nickname shows even if the public profiles table
-          is missing or hasn't synced yet). */}
+      {/* Poster chip */}
       {current && (() => {
         const isMine = !!currentUserId && current.posted_by === currentUserId;
         const resolvedProfile = isMine
@@ -810,7 +823,7 @@ function CircleCard({
         return <PosterChip profile={resolvedProfile} posterEmail={undefined} />;
       })()}
 
-      {/* Delete button — top-left, only for posts authored by the current user */}
+      {/* Delete button */}
       {current && currentUserId && current.posted_by === currentUserId && (
         <motion.button
           whileTap={{ scale: 0.85 }}
@@ -857,7 +870,7 @@ function CircleCard({
         </motion.button>
       )}
 
-      {/* Heart favorite button — top-right, only for members of this circle */}
+      {/* Heart favorite button */}
       {canFavorite && current && (
         <motion.button
           whileTap={{ scale: 0.85 }}
@@ -874,10 +887,10 @@ function CircleCard({
             height: 44,
             borderRadius: "50%",
             background: favorites.includes(current.id)
-              ? "rgba(248,113,113,0.22)"
+              ? "rgba(212,83,126,0.22)"
               : "rgba(0,0,0,0.5)",
             border: favorites.includes(current.id)
-              ? "1px solid rgba(248,113,113,0.6)"
+              ? "1px solid rgba(212,83,126,0.6)"
               : "1px solid rgba(255,255,255,0.2)",
             backdropFilter: "blur(10px)",
             display: "flex",
@@ -893,8 +906,8 @@ function CircleCard({
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill={favorites.includes(current.id) ? "#F87171" : "none"}
-            stroke={favorites.includes(current.id) ? "#F87171" : "rgba(255,255,255,0.9)"}
+            fill={favorites.includes(current.id) ? "#D4537E" : "none"}
+            stroke={favorites.includes(current.id) ? "#D4537E" : "rgba(255,255,255,0.9)"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -956,14 +969,14 @@ function PosterChip({
             width: 28,
             height: 28,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(167,139,250,0.28), rgba(167,139,250,0.12))",
-            border: "1px solid rgba(167,139,250,0.3)",
+            background: "rgba(212,83,126,0.30)",
+            border: "1px solid rgba(212,83,126,0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
             fontSize: 13,
-            color: "#E9E0FF",
+            color: "#FFCCD8",
             fontWeight: 600,
             letterSpacing: "0.02em",
           }}
@@ -1015,7 +1028,6 @@ function JoinModal({ user, onClose, onJoined }: {
         return;
       }
 
-      // Find invite code
       const { data: inviteData, error: inviteErr } = await supabase
         .from("invite_codes")
         .select("circle_id")
@@ -1030,7 +1042,6 @@ function JoinModal({ user, onClose, onJoined }: {
 
       const circleId = inviteData.circle_id;
 
-      // Check already a member
       const { data: existing } = await supabase
         .from("circle_members")
         .select("id")
@@ -1039,12 +1050,10 @@ function JoinModal({ user, onClose, onJoined }: {
         .single();
 
       if (existing) {
-        // Already member — just navigate
         onJoined(circleId);
         return;
       }
 
-      // Insert membership
       const { error: memberErr } = await supabase
         .from("circle_members")
         .insert({ circle_id: circleId, user_id: user.id, role: "member" });
@@ -1067,7 +1076,13 @@ function JoinModal({ user, onClose, onJoined }: {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100, backdropFilter: "blur(4px)" }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "rgba(0,0,0,0.5)",
+          zIndex: 100,
+          backdropFilter: "blur(4px)",
+        }}
       />
 
       {/* Sheet */}
@@ -1077,18 +1092,23 @@ function JoinModal({ user, onClose, onJoined }: {
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         style={{
-          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 101,
-          background: "#141416",
-          border: "1px solid rgba(255,255,255,0.10)",
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 101,
+          background: "#FFFFFF",
+          border: "0.5px solid rgba(0,0,0,0.08)",
           borderBottom: "none",
           borderRadius: "24px 24px 0 0",
           padding: "24px 24px 48px",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.10)",
         }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", margin: "0 auto 24px" }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#E5E5E5", margin: "0 auto 24px" }} />
 
-        <p className="text-base font-semibold silver-text mb-1">グループに参加</p>
-        <p className="text-xs mb-6" style={{ color: "rgba(255,255,255,0.35)" }}>
+        <p className="text-base font-semibold mb-1" style={{ color: "#1F2937" }}>グループに参加</p>
+        <p className="text-xs mb-6" style={{ color: "#9CA3AF" }}>
           担当者から受け取った招待コードを入力してください
         </p>
 
@@ -1103,9 +1123,9 @@ function JoinModal({ user, onClose, onJoined }: {
             maxLength={6}
             className="w-full rounded-2xl outline-none text-center"
             style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#A78BFA",
+              background: "rgba(0,0,0,0.03)",
+              border: "0.5px solid rgba(212,83,126,0.3)",
+              color: "#D4537E",
               fontSize: 32,
               fontWeight: 700,
               letterSpacing: "0.25em",
@@ -1118,7 +1138,7 @@ function JoinModal({ user, onClose, onJoined }: {
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="text-xs text-center px-1"
-                style={{ color: "rgba(248,113,113,0.85)" }}
+                style={{ color: "#EF4444" }}
               >
                 {error}
               </motion.p>
@@ -1131,14 +1151,13 @@ function JoinModal({ user, onClose, onJoined }: {
             whileTap={{ scale: 0.97 }}
             className="w-full rounded-2xl py-4 text-sm font-medium mt-1"
             style={{
-              background: code.length === 6 && !loading
-                ? "linear-gradient(135deg, rgba(167,139,250,0.25), rgba(167,139,250,0.12))"
-                : "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(167,139,250,0.3)",
-              color: code.length === 6 && !loading ? "#C4B5FD" : "rgba(255,255,255,0.2)",
+              background: code.length === 6 && !loading ? "#D4537E" : "rgba(0,0,0,0.04)",
+              border: code.length === 6 && !loading ? "none" : "0.5px solid #E5E5E5",
+              color: code.length === 6 && !loading ? "#FFFFFF" : "#9CA3AF",
               cursor: code.length === 6 && !loading ? "pointer" : "not-allowed",
               letterSpacing: "0.04em",
               transition: "all 0.25s ease",
+              boxShadow: code.length === 6 && !loading ? "0 4px 14px rgba(212,83,126,0.35)" : "none",
             }}
           >
             {loading ? "参加中..." : "参加する"}

@@ -14,10 +14,10 @@ import FavoriteButton from "@/components/FavoriteButton";
 
 const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 const GRADIENTS = [
-  "from-slate-700 to-slate-900",
-  "from-zinc-700 to-zinc-900",
-  "from-neutral-700 to-neutral-900",
-  "from-stone-700 to-stone-900",
+  "from-slate-200 to-slate-300",
+  "from-zinc-200 to-zinc-300",
+  "from-neutral-200 to-neutral-300",
+  "from-stone-200 to-stone-300",
 ];
 
 type View = "month" | "day" | "posts";
@@ -28,7 +28,6 @@ function getPostDay(post: Post): number {
 }
 
 function daysInMonth(year: number, month: number): number {
-  // month is 1-12; Date with day=0 gives the last day of the previous month
   return new Date(year, month, 0).getDate();
 }
 
@@ -39,7 +38,6 @@ export default function CircleDetailPage() {
   const searchParams = useSearchParams();
   const id = params.id as string;
 
-  // Deep-link from /me favorites or elsewhere: ?month=4&day=15&view=posts
   const initialMonth = (() => {
     const v = Number(searchParams.get("month"));
     return Number.isFinite(v) && v >= 1 && v <= 12 ? v : new Date().getMonth() + 1;
@@ -61,7 +59,6 @@ export default function CircleDetailPage() {
   const [favLimitToast, setFavLimitToast] = useState(false);
   const [deleteErrorToast, setDeleteErrorToast] = useState(false);
 
-  // サークル自体のお気に入り（ハート）
   const {
     isFavorited: isCircleFavorited,
     isPending: isCircleFavPending,
@@ -125,9 +122,7 @@ export default function CircleDetailPage() {
   async function deletePost(post: Post) {
     if (!user || post.posted_by !== user.id) return;
 
-    // Optimistic UI: remove from local state right away
     setPosts((prev) => prev.filter((p) => p.id !== post.id));
-    // Also remove from favorites if present
     if (favorites.includes(post.id)) {
       const nextFavs = favorites.filter((id) => id !== post.id);
       setFavorites(nextFavs);
@@ -139,17 +134,14 @@ export default function CircleDetailPage() {
     }
 
     if (supabase && user.id !== "dev-user") {
-      // Remove DB row
       const { error: delErr } = await supabase.from("posts").delete().eq("id", post.id);
       if (delErr) {
         console.error("post delete failed", delErr);
-        // Revert optimistic update
         setPosts((prev) => [post, ...prev]);
         setDeleteErrorToast(true);
         setTimeout(() => setDeleteErrorToast(false), 3000);
         return;
       }
-      // Best-effort: remove the media file from storage
       const marker = "/storage/v1/object/public/posts/";
       const idx = post.media_url?.indexOf(marker) ?? -1;
       if (idx >= 0) {
@@ -189,7 +181,6 @@ export default function CircleDetailPage() {
     [dayCount]
   );
 
-  // Clamp selectedDay if the month changed and the day no longer exists
   useEffect(() => {
     if (selectedDay > dayCount) setSelectedDay(Math.max(1, dayCount));
   }, [dayCount, selectedDay]);
@@ -199,8 +190,17 @@ export default function CircleDetailPage() {
 
   if (user === undefined || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
-        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "rgba(255,255,255,0.5)", animation: "spin 0.8s linear infinite" }} />
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAFA" }}>
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: "2px solid #E5E5E5",
+            borderTopColor: "#D4537E",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -208,8 +208,8 @@ export default function CircleDetailPage() {
 
   if (!circle) {
     return (
-      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0D0D0F" }}>
-        <p style={{ color: "rgba(255,255,255,0.3)" }}>サークルが見つかりません</p>
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#FAFAFA" }}>
+        <p style={{ color: "#9CA3AF" }}>サークルが見つかりません</p>
       </div>
     );
   }
@@ -229,11 +229,16 @@ export default function CircleDetailPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#0D0D0F" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#FAFAFA" }}>
       {/* Header */}
       <div
         className="sticky top-0 z-50 px-4 pt-12 pb-3"
-        style={{ background: "linear-gradient(to bottom, #0D0D0F 80%, transparent)" }}
+        style={{
+          background: "rgba(250,250,250,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: "0.5px solid #E5E5E5",
+        }}
       >
         <div className="flex items-center gap-3">
           <motion.button
@@ -243,19 +248,28 @@ export default function CircleDetailPage() {
               else if (view === "day") onBackFromDay();
               else router.back();
             }}
-            className="glass rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ width: 36, height: 36, border: "1px solid rgba(255,255,255,0.10)", background: "none", cursor: "pointer" }}
+            className="rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 36,
+              height: 36,
+              background: "#FFFFFF",
+              border: "0.5px solid #E5E5E5",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              cursor: "pointer",
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ pointerEvents: "none" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C757D" strokeWidth="2" style={{ pointerEvents: "none" }}>
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </motion.button>
-          <h1 className="text-base font-semibold truncate silver-text">{circle.name}</h1>
+          <h1 className="text-base font-semibold truncate" style={{ color: "#1F2937" }}>
+            {circle.name}
+          </h1>
           <div className="ml-auto flex items-center gap-2">
             <span
               style={{
                 fontSize: 11,
-                color: "rgba(255,255,255,0.4)",
+                color: "#9CA3AF",
                 letterSpacing: "0.04em",
               }}
             >
@@ -265,14 +279,12 @@ export default function CircleDetailPage() {
                 ? `${selectedMonth}月 / 日を選ぶ`
                 : `${selectedMonth}月${selectedDay}日`}
             </span>
-            {/* サークルお気に入りボタン */}
             <FavoriteButton
               circleId={id}
               isFavorited={isCircleFavorited(id)}
               isPending={isCircleFavPending(id)}
               onToggle={toggleCircleFavorite}
               size={34}
-              dark
             />
           </div>
         </div>
@@ -285,11 +297,16 @@ export default function CircleDetailPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="px-4 pb-3 flex items-start gap-3"
+            className="px-4 pb-3 pt-3 flex items-start gap-3"
           >
             <div
-              className="glass rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-              style={{ width: 48, height: 48, background: "rgba(255,255,255,0.04)" }}
+              className="rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+              style={{
+                width: 48,
+                height: 48,
+                background: "#F1EFE8",
+                border: "0.5px solid #E5E5E5",
+              }}
             >
               {circle.icon_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -302,12 +319,17 @@ export default function CircleDetailPage() {
               {circle.category && (
                 <span
                   className="inline-block rounded-full px-2 py-0.5 mb-1"
-                  style={{ fontSize: 10, background: "rgba(167,139,250,0.10)", color: "rgba(167,139,250,0.8)", border: "1px solid rgba(167,139,250,0.2)" }}
+                  style={{
+                    fontSize: 10,
+                    background: "#FFF0F6",
+                    color: "#D4537E",
+                    border: "1px solid rgba(212,83,126,0.2)",
+                  }}
                 >
                   {circle.category}
                 </span>
               )}
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
+              <p className="text-xs" style={{ color: "#9CA3AF" }}>
                 {posts.length}件の投稿
               </p>
             </div>
@@ -315,10 +337,17 @@ export default function CircleDetailPage() {
               <Link href={`/circle/${id}/settings`} style={{ flexShrink: 0 }}>
                 <motion.div
                   whileTap={{ scale: 0.92 }}
-                  className="glass rounded-full flex items-center justify-center"
-                  style={{ width: 36, height: 36, border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer" }}
+                  className="rounded-full flex items-center justify-center"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    background: "#FFFFFF",
+                    border: "0.5px solid #E5E5E5",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    cursor: "pointer",
+                  }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C757D" strokeWidth="2">
                     <circle cx="12" cy="12" r="3" />
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                   </svg>
@@ -392,10 +421,10 @@ export default function CircleDetailPage() {
               className="px-3 pt-2"
             >
               <div className="flex items-baseline gap-2 px-1 pb-3">
-                <h2 className="text-lg font-semibold silver-text">
+                <h2 className="text-lg font-semibold" style={{ color: "#1F2937" }}>
                   {selectedMonth}月{selectedDay}日
                 </h2>
-                <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+                <span className="text-xs" style={{ color: "#9CA3AF" }}>
                   {dayPosts.length}件
                 </span>
               </div>
@@ -433,13 +462,13 @@ export default function CircleDetailPage() {
               zIndex: 80,
               padding: "10px 18px",
               borderRadius: 12,
-              background: "rgba(20,20,22,0.95)",
-              border: "1px solid rgba(167,139,250,0.3)",
-              color: "rgba(196,181,253,0.9)",
+              background: "#FFFFFF",
+              border: "0.5px solid #E5E5E5",
+              color: "#6C757D",
               fontSize: 12,
               letterSpacing: "0.03em",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+              whiteSpace: "nowrap",
             }}
           >
             お気に入りは6つまで。マイページで整理してね
@@ -462,14 +491,13 @@ export default function CircleDetailPage() {
               zIndex: 80,
               padding: "10px 18px",
               borderRadius: 12,
-              background: "rgba(20,20,22,0.95)",
-              border: "1px solid rgba(248,113,113,0.4)",
-              color: "rgba(248,113,113,0.9)",
+              background: "#FFFFFF",
+              border: "1px solid rgba(239,68,68,0.3)",
+              color: "#EF4444",
               fontSize: 12,
               whiteSpace: "nowrap",
               letterSpacing: "0.03em",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
             }}
           >
             削除に失敗しました。権限を確認してください。
@@ -497,14 +525,13 @@ export default function CircleDetailPage() {
               gap: 6,
               padding: "10px 16px",
               borderRadius: 12,
-              background: "rgba(20,20,22,0.95)",
-              border: "1px solid rgba(248,113,113,0.4)",
-              color: "rgba(248,113,113,0.9)",
+              background: "#FFFFFF",
+              border: "1px solid rgba(239,68,68,0.3)",
+              color: "#EF4444",
               fontSize: 12,
               whiteSpace: "nowrap",
               letterSpacing: "0.03em",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-              backdropFilter: "blur(12px)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
               cursor: "pointer",
             }}
           >
@@ -517,7 +544,7 @@ export default function CircleDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* Fixed bottom CTA — swaps by view */}
+      {/* Fixed bottom CTA */}
       <div
         style={{
           position: "fixed",
@@ -526,7 +553,7 @@ export default function CircleDetailPage() {
           right: 0,
           zIndex: 50,
           padding: "16px 20px 32px",
-          background: "linear-gradient(to top, #0D0D0F 60%, transparent)",
+          background: "linear-gradient(to top, rgba(250,250,250,1) 60%, transparent)",
         }}
       >
         {view === "month" && (
@@ -557,13 +584,15 @@ export default function CircleDetailPage() {
               whileTap={{ scale: 0.97 }}
               className="w-full rounded-2xl py-4 flex items-center justify-center gap-2"
               style={{
-                background: "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.10))",
-                border: "1px solid rgba(167,139,250,0.35)",
+                background: "#D4537E",
                 cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(212,83,126,0.35)",
               }}
             >
               <span style={{ fontSize: 18 }}>📷</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#C4B5FD", letterSpacing: "0.04em" }}>投稿する</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF", letterSpacing: "0.04em" }}>
+                投稿する
+              </span>
             </motion.div>
           </Link>
         )}
@@ -583,10 +612,7 @@ function PreviewStrip({
 }) {
   return (
     <div className="w-full flex flex-col items-center">
-      <div
-        className="flex items-end justify-center gap-2"
-        style={{ minHeight: 112 }}
-      >
+      <div className="flex items-end justify-center gap-2" style={{ minHeight: 112 }}>
         <AnimatePresence mode="popLayout">
           {previews.length === 0 ? (
             <motion.div
@@ -595,15 +621,15 @@ function PreviewStrip({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
-              className="glass rounded-2xl flex items-center justify-center"
+              className="rounded-2xl flex items-center justify-center"
               style={{
                 width: 92,
                 height: 92,
-                border: "1px dashed rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.02)",
+                border: "1.5px dashed #E5E5E5",
+                background: "#FFFFFF",
               }}
             >
-              <span style={{ fontSize: 18, opacity: 0.2 }}>○</span>
+              <span style={{ fontSize: 18, color: "#E5E5E5" }}>○</span>
             </motion.div>
           ) : (
             previews.map((post, i) => (
@@ -618,12 +644,12 @@ function PreviewStrip({
                   delay: i * 0.05,
                   ease: [0.25, 0.46, 0.45, 0.94],
                 }}
-                className="glass rounded-2xl overflow-hidden"
+                className="rounded-2xl overflow-hidden"
                 style={{
                   width: 92,
                   height: 92,
-                  border: "1px solid rgba(167,139,250,0.22)",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(167,139,250,0.08)",
+                  border: "1px solid rgba(212,83,126,0.22)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.10), 0 0 20px rgba(212,83,126,0.06)",
                 }}
               >
                 {post.media_url ? (
@@ -637,10 +663,10 @@ function PreviewStrip({
                   />
                 ) : (
                   <div
-                    className="bg-gradient-to-br from-slate-700 to-slate-900"
+                    className="bg-gradient-to-br from-slate-100 to-slate-200"
                     style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
                   >
-                    <span style={{ fontSize: 22, opacity: 0.2 }}>🖼️</span>
+                    <span style={{ fontSize: 22, opacity: 0.3 }}>🖼️</span>
                   </div>
                 )}
               </motion.div>
@@ -650,14 +676,11 @@ function PreviewStrip({
       </div>
       <p
         className="mt-2 text-xs"
-        style={{
-          color: "rgba(255,255,255,0.3)",
-          letterSpacing: "0.05em",
-        }}
+        style={{ color: "#9CA3AF", letterSpacing: "0.05em" }}
       >
         {label}
         {total > 3 && (
-          <span style={{ color: "rgba(167,139,250,0.7)", marginLeft: 6 }}>
+          <span style={{ color: "#D4537E", marginLeft: 6 }}>
             +{total - 3}
           </span>
         )}
@@ -682,18 +705,15 @@ function OpenButton({
       disabled={disabled}
       className="w-full rounded-2xl py-4"
       style={{
-        background: disabled
-          ? "rgba(255,255,255,0.04)"
-          : "linear-gradient(135deg, rgba(167,139,250,0.20), rgba(167,139,250,0.10))",
-        border: disabled
-          ? "1px solid rgba(255,255,255,0.06)"
-          : "1px solid rgba(167,139,250,0.35)",
-        color: disabled ? "rgba(255,255,255,0.25)" : "#C4B5FD",
+        background: disabled ? "rgba(0,0,0,0.04)" : "#D4537E",
+        border: disabled ? "0.5px solid #E5E5E5" : "none",
+        color: disabled ? "#9CA3AF" : "#FFFFFF",
         fontSize: 14,
         fontWeight: 600,
         letterSpacing: "0.05em",
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.25s ease",
+        boxShadow: disabled ? "none" : "0 4px 14px rgba(212,83,126,0.35)",
       }}
     >
       {label}
@@ -725,35 +745,89 @@ function PostCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="glass rounded-xl overflow-hidden"
-      style={{ position: "relative" }}
+      className="rounded-xl overflow-hidden"
+      style={{
+        position: "relative",
+        background: "#FFFFFF",
+        border: "0.5px solid #E5E5E5",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+      }}
     >
       {post.media_url ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.media_url} alt={post.caption ?? ""} loading="lazy" decoding="async" style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
+        <img
+          src={post.media_url}
+          alt={post.caption ?? ""}
+          loading="lazy"
+          decoding="async"
+          style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }}
+        />
       ) : (
-        <div className={`bg-gradient-to-br ${gradient} flex items-center justify-center`} style={{ height: 140 }}>
-          <span style={{ fontSize: 32, opacity: 0.25 }}>🖼️</span>
+        <div
+          className={`bg-gradient-to-br ${gradient} flex items-center justify-center`}
+          style={{ height: 140 }}
+        >
+          <span style={{ fontSize: 32, opacity: 0.3 }}>🖼️</span>
         </div>
       )}
       {canDelete && (
         <div style={{ position: "absolute", top: 6, left: 6 }}>
           {confirmDel ? (
             <div style={{ display: "flex", gap: 4 }}>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onDelete(); setConfirmDel(false); }}
-                style={{ fontSize: 10, padding: "4px 8px", borderRadius: 8, background: "rgba(248,113,113,0.9)", border: "none", color: "#fff", cursor: "pointer", fontWeight: 700, backdropFilter: "blur(6px)" }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => { e.stopPropagation(); onDelete(); setConfirmDel(false); }}
+                style={{
+                  fontSize: 10,
+                  padding: "4px 8px",
+                  borderRadius: 8,
+                  background: "#EF4444",
+                  border: "none",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  backdropFilter: "blur(6px)",
+                }}
+              >
                 削除
               </motion.button>
-              <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); setConfirmDel(false); }}
-                style={{ fontSize: 10, padding: "4px 8px", borderRadius: 8, background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)", cursor: "pointer", backdropFilter: "blur(6px)" }}>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => { e.stopPropagation(); setConfirmDel(false); }}
+                style={{
+                  fontSize: 10,
+                  padding: "4px 8px",
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.85)",
+                  border: "0.5px solid #E5E5E5",
+                  color: "#6C757D",
+                  cursor: "pointer",
+                  backdropFilter: "blur(6px)",
+                }}
+              >
                 戻る
               </motion.button>
             </div>
           ) : (
-            <motion.button whileTap={{ scale: 0.85 }} onClick={(e) => { e.stopPropagation(); setConfirmDel(true); }}
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={(e) => { e.stopPropagation(); setConfirmDel(true); }}
               aria-label="この投稿を削除"
-              style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(248,113,113,0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: "none" }}>
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.85)",
+                border: "0.5px solid #E5E5E5",
+                backdropFilter: "blur(6px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ pointerEvents: "none" }}>
                 <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
               </svg>
             </motion.button>
@@ -775,8 +849,8 @@ function PostCard({
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: favorited ? "rgba(248,113,113,0.18)" : "rgba(0,0,0,0.45)",
-            border: favorited ? "1px solid rgba(248,113,113,0.6)" : "1px solid rgba(255,255,255,0.14)",
+            background: favorited ? "rgba(212,83,126,0.12)" : "rgba(255,255,255,0.85)",
+            border: favorited ? "1px solid rgba(212,83,126,0.4)" : "0.5px solid #E5E5E5",
             backdropFilter: "blur(6px)",
             display: "flex",
             alignItems: "center",
@@ -789,8 +863,8 @@ function PostCard({
             width="16"
             height="16"
             viewBox="0 0 24 24"
-            fill={favorited ? "#F87171" : "none"}
-            stroke={favorited ? "#F87171" : "rgba(255,255,255,0.85)"}
+            fill={favorited ? "#D4537E" : "none"}
+            stroke={favorited ? "#D4537E" : "#6C757D"}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -804,7 +878,7 @@ function PostCard({
           <p
             className="text-xs leading-relaxed"
             style={{
-              color: "rgba(255,255,255,0.5)",
+              color: "#6C757D",
               overflow: "hidden",
               display: "-webkit-box",
               WebkitLineClamp: 2,
