@@ -43,6 +43,8 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        {/* iOS ホーム画面アイコン（Safari は manifest より apple-touch-icon を優先） */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
       <body className="min-h-full flex flex-col" style={{ background: "#FAFAFA" }}>
         {children}
