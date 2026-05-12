@@ -4,8 +4,8 @@
   "description": "大学サークル・部活の活動記録SNS",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0D0D0F",
-  "theme_color": "#0D0D0F",
+  "background_color": "#FAFAFA",
+  "theme_color": "#D4537E",
   "orientation": "portrait",
   "icons": [
     {
